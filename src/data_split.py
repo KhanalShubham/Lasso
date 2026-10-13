@@ -24,8 +24,8 @@ FEATURES_CSV = WORKSPACE_ROOT / "data" / "features" / "dataset_features.csv"
 PROCESSED_DIR = WORKSPACE_ROOT / "data" / "processed"
 REPORTS_DIR = WORKSPACE_ROOT / "reports"
 
-# 16 approved candidate predictors (ADR-007 Option A)
-PREDICTOR_COLS = [
+# Legacy 16 candidate predictors (ADR-007 Option A)
+LEGACY_PREDICTOR_COLS = [
     "diff_sot_k5",
     "diff_sotA_k5",
     "diff_shots_k5",
@@ -44,11 +44,25 @@ PREDICTOR_COLS = [
     "diff_rest_days",
 ]
 
-TRAIN_SEASONS = ["2019-2020", "2020-2021", "2021-2022"]
-VAL_SEASON = "2022-2023"
-TEST_SEASON = "2023-2024"
+# OpenFootball public-domain result-derived candidate predictors (ADR-013)
+OPENFOOTBALL_PREDICTOR_COLS = [
+    "diff_goals_scored_k5",
+    "diff_goals_conceded_k5",
+    "diff_ppg_k5",
+    "diff_goal_diff_k10",
+    "diff_venue_ppg_k5",
+    "diff_rest_days",
+    "diff_clean_sheets_k10",
+    "diff_win_rate_k5",
+]
 
-FEATURE_CLUSTER_MAP = {
+PREDICTOR_COLS = OPENFOOTBALL_PREDICTOR_COLS
+
+TRAIN_SEASONS = ["2019-20", "2019-2020", "2020-21", "2020-2021", "2021-22", "2021-2022"]
+VAL_SEASONS = ["2022-23", "2022-2023"]
+TEST_SEASONS = ["2023-24", "2023-2024"]
+
+LEGACY_CLUSTER_MAP = {
     "diff_shots_k5": "Shot Volume & Dominance",
     "diff_shotsA_k5": "Shot Volume & Dominance",
     "diff_shot_dominance_k5": "Shot Volume & Dominance",
@@ -67,13 +81,37 @@ FEATURE_CLUSTER_MAP = {
     "diff_rest_days": "Schedule Congestion",
 }
 
+OPENFOOTBALL_CLUSTER_MAP = {
+    "diff_goals_scored_k5": "Attacking Threat & Output",
+    "diff_goals_conceded_k5": "Defensive Concession",
+    "diff_ppg_k5": "Recent Form & Momentum",
+    "diff_goal_diff_k10": "Sustained Structural Quality",
+    "diff_venue_ppg_k5": "Venue-Specific Home/Away Form",
+    "diff_rest_days": "Schedule Congestion & Rest",
+    "diff_clean_sheets_k10": "Defensive Solidity & Shutouts",
+    "diff_win_rate_k5": "Win Conversion Rate",
+}
+
+FEATURE_CLUSTER_MAP = OPENFOOTBALL_CLUSTER_MAP
+
+
+def get_active_predictors(df: pd.DataFrame) -> tuple[list[str], dict[str, str]]:
+    """Determine active predictor list and cluster mapping based on columns present."""
+    if "diff_goals_scored_k5" in df.columns:
+        return OPENFOOTBALL_PREDICTOR_COLS, OPENFOOTBALL_CLUSTER_MAP
+    return LEGACY_PREDICTOR_COLS, LEGACY_CLUSTER_MAP
+
 
 def load_and_validate_partitions(features_path: Path = FEATURES_CSV) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     """Load features dataset and partition chronologically with strict validation."""
+    global PREDICTOR_COLS, FEATURE_CLUSTER_MAP
     if not features_path.exists():
         raise FileNotFoundError(f"Features dataset not found: {features_path}")
 
     df = pd.read_csv(features_path)
+    active_cols, cluster_map = get_active_predictors(df)
+    PREDICTOR_COLS = active_cols
+    FEATURE_CLUSTER_MAP = cluster_map
 
     # Filter strictly to modelling-ready fixtures (warm-up cold-start isolation)
     ready = df[df["is_modelling_ready"]].copy().reset_index(drop=True)
@@ -82,8 +120,8 @@ def load_and_validate_partitions(features_path: Path = FEATURES_CSV) -> tuple[pd
         raise ValueError(f"Expected exactly 1,741 modelling-ready matches, got {len(ready)}")
 
     train_df = ready[ready["season"].isin(TRAIN_SEASONS)].copy().reset_index(drop=True)
-    val_df = ready[ready["season"] == VAL_SEASON].copy().reset_index(drop=True)
-    test_df = ready[ready["season"] == TEST_SEASON].copy().reset_index(drop=True)
+    val_df = ready[ready["season"].isin(VAL_SEASONS)].copy().reset_index(drop=True)
+    test_df = ready[ready["season"].isin(TEST_SEASONS)].copy().reset_index(drop=True)
 
     # Invariant assertions
     if len(train_df) != 1002:
@@ -93,7 +131,7 @@ def load_and_validate_partitions(features_path: Path = FEATURES_CSV) -> tuple[pd
     if len(test_df) != 369:
         raise ValueError(f"Expected exactly 369 test matches, got {len(test_df)}")
 
-    # Check zero nulls across all 16 predictors
+    # Check zero nulls across active predictors
     for name, part in [("Train", train_df), ("Val", val_df), ("Test", test_df)]:
         null_counts = part[PREDICTOR_COLS].isnull().sum()
         if null_counts.sum() > 0:
@@ -219,9 +257,9 @@ def compute_vif_and_collinearity_diagnostics(
     # Empirical Hessian under training base frequencies:
     # H_0 = (1/n) * X^T W X where W_c = p_c * (1 - p_c)
     # Average class variance across 3 classes:
-    p_home = 424.0 / 1002.0
-    p_draw = 225.0 / 1002.0
-    p_away = 353.0 / 1002.0
+    p_home = float(train_df["target_multinomial"].value_counts().get(2, 0) / len(train_df))
+    p_draw = float(train_df["target_multinomial"].value_counts().get(1, 0) / len(train_df))
+    p_away = float(train_df["target_multinomial"].value_counts().get(0, 0) / len(train_df))
     w_avg = (p_home * (1 - p_home) + p_draw * (1 - p_draw) + p_away * (1 - p_away)) / 3.0
 
     H_0 = (w_avg / len(X_with_intercept)) * (X_with_intercept.T @ X_with_intercept)
@@ -250,6 +288,7 @@ def compute_vif_and_collinearity_diagnostics(
     print(f"Saved VIF diagnostics JSON to: {diag_path}")
 
     # Generate Markdown summary report
+    p_count = len(vif_df)
     md_content = f"""# Training Partition Collinearity & VIF Diagnostics (Gate 4)
 
 **Sample:** Training Partition (Seasons 2019/20 - 2021/22, $N = 1,002$ matches)  
@@ -261,8 +300,8 @@ def compute_vif_and_collinearity_diagnostics(
 
 - **Design Matrix Condition Number $\\kappa(\\mathbf{{X}})$:** `{round(kappa_X, 2)}`
 - **Empirical Unpenalized Hessian Condition Number $\\kappa(\\mathbf{{H}}_0)$:** `{round(kappa_H0, 2)}`
-- **Features with $\\text{{VIF}} \\ge 5.0$:** `{(vif_df['vif'] >= 5.0).sum()}` of 16 predictors
-- **Features with $\\text{{VIF}} \\ge 10.0$:** `{(vif_df['vif'] >= 10.0).sum()}` of 16 predictors
+- **Features with $\\text{{VIF}} \\ge 5.0$:** `{(vif_df['vif'] >= 5.0).sum()}` of {p_count} predictors
+- **Features with $\\text{{VIF}} \\ge 10.0$:** `{(vif_df['vif'] >= 10.0).sum()}` of {p_count} predictors
 
 ---
 

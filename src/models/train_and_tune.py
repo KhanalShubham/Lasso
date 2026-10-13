@@ -42,24 +42,20 @@ FIGURES_DIR = REPORTS_DIR / "figures"
 REPORTS_DIR.mkdir(parents=True, exist_ok=True)
 FIGURES_DIR.mkdir(parents=True, exist_ok=True)
 
-PREDICTOR_COLS = [
-    "diff_sot_k5",
-    "diff_sotA_k5",
-    "diff_shots_k5",
-    "diff_shotsA_k5",
-    "diff_sot_ratio_k5",
-    "diff_shot_dominance_k5",
-    "diff_corners_k5",
-    "diff_cornersA_k5",
-    "diff_fouls_k5",
-    "diff_yellows_k5",
-    "diff_goal_diff_k5",
-    "diff_goal_diff_k10",
-    "diff_clean_sheets_k10",
-    "diff_ppg_k5",
-    "diff_venue_ppg_k5",
-    "diff_rest_days",
-]
+try:
+    scalers_meta = joblib.load(PROCESSED_DIR / "scalers.joblib")
+    PREDICTOR_COLS = scalers_meta["feature_names"]
+except Exception:
+    PREDICTOR_COLS = [
+        "diff_goals_scored_k5",
+        "diff_goals_conceded_k5",
+        "diff_ppg_k5",
+        "diff_goal_diff_k10",
+        "diff_venue_ppg_k5",
+        "diff_rest_days",
+        "diff_clean_sheets_k10",
+        "diff_win_rate_k5",
+    ]
 
 FD_TO_FBREF_TEAM_MAP = {
     "Arsenal": "Arsenal",
@@ -315,7 +311,7 @@ def run_tuning():
     print(f"  Corresponding C = {best_lasso_row['C_lasso']:.6f}")
     print(f"  Validation Log-Loss = {best_lasso_row['lasso_log_loss']:.4f} (delta vs MLE: {mle_ll - best_lasso_row['lasso_log_loss']:+.4f})")
     print(f"  Validation Brier    = {best_lasso_row['lasso_brier_score']:.4f}")
-    print(f"  Features Retained   = {int(best_lasso_row['lasso_retained_count'])} of 16 ({best_lasso_row['lasso_retained_pct']:.1f}%)")
+    print(f"  Features Retained   = {int(best_lasso_row['lasso_retained_count'])} of {len(PREDICTOR_COLS)} ({best_lasso_row['lasso_retained_pct']:.1f}%)")
     print(f"  Retained Feature Set: {best_lasso_row['lasso_retained_features']}")
     print("=" * 70)
 
@@ -367,9 +363,10 @@ def run_tuning():
     ax1.grid(True, linestyle="--", alpha=0.6)
 
     # B. Sparsity & Degrees of Freedom
-    ax2.plot(tuning_df["log10_lambda"], tuning_df["ridge_df"], "o-", color="#1e3a8a", linewidth=2, label="Ridge df(λ) (Total=19)")
-    ax2.plot(tuning_df["log10_lambda"], tuning_df["lasso_retained_count"], "s--", color="#b91c1c", linewidth=2, label="Lasso Retained Features (Max=16)")
-    ax2.axhline(8, color="#dc2626", linestyle=":", linewidth=1.2, label="H3 Parsimony Threshold (<=8 features)")
+    p_tot = len(PREDICTOR_COLS)
+    ax2.plot(tuning_df["log10_lambda"], tuning_df["ridge_df"], "o-", color="#1e3a8a", linewidth=2, label=f"Ridge df(λ) (Total={3*p_tot+1})")
+    ax2.plot(tuning_df["log10_lambda"], tuning_df["lasso_retained_count"], "s--", color="#b91c1c", linewidth=2, label=f"Lasso Retained Features (Max={p_tot})")
+    ax2.axhline(p_tot // 2, color="#dc2626", linestyle=":", linewidth=1.2, label=f"H3 Parsimony Threshold (<={p_tot//2} features)")
     ax2.axvline(best_lasso_row["log10_lambda"], color="#b91c1c", linestyle=":", alpha=0.7)
 
     ax2.set_xlabel(r"Regularization Strength $\log_{10}(\lambda)$", fontweight="semibold")
@@ -421,13 +418,13 @@ def run_tuning():
 | **Market Average Odds** | — | — | `{mkt_ll:.4f}` | `{mkt_bs:.4f}` | `{mkt_acc:.4f}` | Consensus betting benchmark |
 | **Unregularized MLE** | $0$ | $\\infty$ | `{mle_ll:.4f}` | `{mle_bs:.4f}` | `{mle_acc:.4f}` | Full unconstrained model |
 | **Ridge ($L_2$) Optimal** | **`{lambda_ridge_opt:.4f}`** | **`{best_ridge_row['C_ridge']:.6f}`** | **`{best_ridge_row['ridge_log_loss']:.4f}`** | **`{best_ridge_row['ridge_brier_score']:.4f}`** | **`{best_ridge_row['ridge_accuracy']:.4f}`** | $\\text{{df}}(\\lambda) = {best_ridge_row['ridge_df']:.2f}$ |
-| **Lasso ($L_1$) Optimal** | **`{lambda_lasso_opt:.4f}`** | **`{best_lasso_row['C_lasso']:.6f}`** | **`{best_lasso_row['lasso_log_loss']:.4f}`** | **`{best_lasso_row['lasso_brier_score']:.4f}`** | **`{best_lasso_row['lasso_accuracy']:.4f}`** | **{int(best_lasso_row['lasso_retained_count'])} / 16 features** ({best_lasso_row['lasso_retained_pct']:.1f}%) |
+| **Lasso ($L_1$) Optimal** | **`{lambda_lasso_opt:.4f}`** | **`{best_lasso_row['C_lasso']:.6f}`** | **`{best_lasso_row['lasso_log_loss']:.4f}`** | **`{best_lasso_row['lasso_brier_score']:.4f}`** | **`{best_lasso_row['lasso_accuracy']:.4f}`** | **{int(best_lasso_row['lasso_retained_count'])} / {len(PREDICTOR_COLS)} features** ({best_lasso_row['lasso_retained_pct']:.1f}%) |
 
 ---
 
 ## 2. Optimal Lasso Feature Selection
 
-The optimal Lasso model ($\lambda^* = {lambda_lasso_opt:.4f}$) retained **{int(best_lasso_row['lasso_retained_count'])} of 16 candidate predictors**:
+The optimal Lasso model ($\lambda^* = {lambda_lasso_opt:.4f}$) retained **{int(best_lasso_row['lasso_retained_count'])} of {len(PREDICTOR_COLS)} candidate predictors**:
 
 - **Retained Features:**
 """

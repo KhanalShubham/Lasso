@@ -49,31 +49,27 @@ FIGURES_DIR = REPORTS_DIR / "figures"
 REPORTS_DIR.mkdir(parents=True, exist_ok=True)
 FIGURES_DIR.mkdir(parents=True, exist_ok=True)
 
-PREDICTOR_COLS = [
-    "diff_sot_k5",
-    "diff_sotA_k5",
-    "diff_shots_k5",
-    "diff_shotsA_k5",
-    "diff_sot_ratio_k5",
-    "diff_shot_dominance_k5",
-    "diff_corners_k5",
-    "diff_cornersA_k5",
-    "diff_fouls_k5",
-    "diff_yellows_k5",
-    "diff_goal_diff_k5",
-    "diff_goal_diff_k10",
-    "diff_clean_sheets_k10",
-    "diff_ppg_k5",
-    "diff_venue_ppg_k5",
-    "diff_rest_days",
-]
+try:
+    scalers_meta = joblib.load(PROCESSED_DIR / "scalers.joblib")
+    PREDICTOR_COLS = scalers_meta["feature_names"]
+except Exception:
+    PREDICTOR_COLS = [
+        "diff_goals_scored_k5",
+        "diff_goals_conceded_k5",
+        "diff_ppg_k5",
+        "diff_goal_diff_k10",
+        "diff_venue_ppg_k5",
+        "diff_rest_days",
+        "diff_clean_sheets_k10",
+        "diff_win_rate_k5",
+    ]
 
-FD_TO_FBREF_TEAM_MAP = {
+FD_TO_OPENFOOTBALL_TEAM_MAP = {
     "Arsenal": "Arsenal",
     "Aston Villa": "Aston Villa",
-    "Bournemouth": "Bournemouth",
+    "Bournemouth": "AFC Bournemouth",
     "Brentford": "Brentford",
-    "Brighton": "Brighton",
+    "Brighton": "Brighton & Hove Albion",
     "Burnley": "Burnley",
     "Chelsea": "Chelsea",
     "Crystal Palace": "Crystal Palace",
@@ -84,17 +80,17 @@ FD_TO_FBREF_TEAM_MAP = {
     "Liverpool": "Liverpool",
     "Luton": "Luton Town",
     "Man City": "Manchester City",
-    "Man United": "Manchester Utd",
-    "Newcastle": "Newcastle",
+    "Man United": "Manchester United",
+    "Newcastle": "Newcastle United",
     "Norwich": "Norwich City",
-    "Nott'm Forest": "Nottingham",
+    "Nott'm Forest": "Nottingham Forest",
     "Sheffield United": "Sheffield United",
     "Southampton": "Southampton",
-    "Tottenham": "Tottenham",
+    "Tottenham": "Tottenham Hotspur",
     "Watford": "Watford",
-    "West Brom": "West Brom",
-    "West Ham": "West Ham",
-    "Wolves": "Wolves",
+    "West Brom": "West Bromwich Albion",
+    "West Ham": "West Ham United",
+    "Wolves": "Wolverhampton Wanderers",
 }
 
 
@@ -138,19 +134,21 @@ def load_test_market_odds(test_df: pd.DataFrame) -> dict:
         return {}
 
     fd = pd.read_csv(fd_csv)
-    fd["home_fbref"] = fd["HomeTeam"].map(FD_TO_FBREF_TEAM_MAP)
-    fd["away_fbref"] = fd["AwayTeam"].map(FD_TO_FBREF_TEAM_MAP)
+    fd["home_op"] = fd["HomeTeam"].map(FD_TO_OPENFOOTBALL_TEAM_MAP)
+    fd["away_op"] = fd["AwayTeam"].map(FD_TO_OPENFOOTBALL_TEAM_MAP)
 
+    test_df_copy = test_df[["home_team", "away_team"]].copy()
+    test_df_copy["_order"] = np.arange(len(test_df_copy))
     merged = pd.merge(
-        test_df[["home_team", "away_team"]],
-        fd[["home_fbref", "away_fbref", "AvgH", "AvgD", "AvgA", "B365H", "B365D", "B365A"]],
+        test_df_copy,
+        fd[["home_op", "away_op", "AvgH", "AvgD", "AvgA", "B365H", "B365D", "B365A"]],
         left_on=["home_team", "away_team"],
-        right_on=["home_fbref", "away_fbref"],
-        how="inner"
-    )
+        right_on=["home_op", "away_op"],
+        how="left"
+    ).sort_values("_order")
 
-    if len(merged) != len(test_df):
-        print(f"Warning: Market odds matched {len(merged)} / {len(test_df)} test fixtures.")
+    if merged[["AvgH", "AvgD", "AvgA", "B365H", "B365D", "B365A"]].isna().any().any():
+        print(f"Warning: Market odds missing for some fixtures in {len(test_df)} test set.")
         return {}
 
     # Market Average Odds
@@ -194,15 +192,15 @@ def execute_evaluation_and_tests():
     print(f"Evaluated Sample: Season 2023/24 Test Set (N = {n_test} matches)")
     print(f"Loaded Optimal Models: Ridge (lambda={lambda_ridge:.4f}), Lasso (lambda={lambda_lasso:.4f})")
 
-    # 2. Matchweek Alignment for Test Set
-    sched_2324 = pd.read_csv(RAW_FBREF_DIR / "2023-2024" / "schedule.csv")
+    # 2. Matchweek Alignment for Test Set (from canonical OpenFootball matches)
+    epl_matches = pd.read_csv(PROCESSED_DIR / "epl_matches.csv")
     merged_test = pd.merge(
         test_df,
-        sched_2324[["home_team", "away_team", "week"]],
-        on=["home_team", "away_team"],
+        epl_matches[["match_id", "matchday"]],
+        on="match_id",
         how="left"
     )
-    test_weeks = merged_test["week"].values
+    test_weeks = merged_test["matchday"].values
 
     # 3. Model Probabilities & Predictions
     probs = {}
@@ -383,20 +381,14 @@ def execute_evaluation_and_tests():
 
     # 7. Matchweek Block-Bootstrap Resampling (B = 1,000 Draws) (RQ2, RQ3, H2, H3)
     print("\nExecuting Matchweek Block-Bootstrap Resampling (B = 1,000 draws on Training split)...")
-    sched_1922 = pd.concat([
-        pd.read_csv(RAW_FBREF_DIR / "2019-2020" / "schedule.csv").assign(season="2019-2020"),
-        pd.read_csv(RAW_FBREF_DIR / "2020-2021" / "schedule.csv").assign(season="2020-2021"),
-        pd.read_csv(RAW_FBREF_DIR / "2021-2022" / "schedule.csv").assign(season="2021-2022"),
-    ], ignore_index=True)
-
     train_merged = pd.merge(
         train_df,
-        sched_1922[["season", "home_team", "away_team", "week"]],
-        on=["season", "home_team", "away_team"],
+        epl_matches[["match_id", "matchday"]],
+        on="match_id",
         how="left"
     )
-    # Define block ID as season + week
-    train_merged["block_id"] = train_merged["season"] + "_GW" + train_merged["week"].astype(str)
+    # Define block ID as season + matchday
+    train_merged["block_id"] = train_merged["season"] + "_GW" + train_merged["matchday"].astype(str)
     unique_blocks = train_merged["block_id"].unique()
     n_blocks = len(unique_blocks)
     print(f"Total training matchweek blocks: {n_blocks}")
@@ -568,7 +560,29 @@ def execute_evaluation_and_tests():
     plt.close(fig_boot)
     print(f"Saved: {boot_fig_path}")
 
+    lasso_sparsity = lasso.get_sparsity()
+    n_retained = lasso_sparsity["n_retained"]
+    p_total = len(PREDICTOR_COLS)
+    pct_retained = lasso_sparsity["pct_retained"]
+
     # 9. Write Comprehensive Final Dissertation Report
+    report_rows = []
+    for model_name, label in [
+        ("Prior", "Training Frequency Prior"),
+        ("Market_Avg", "Market Average Odds"),
+        ("Bet365", "Bet365 Odds"),
+        ("MLE", "Unregularized MLE"),
+        ("Ridge", f"Ridge ($L_2$) ($\\lambda^* = {lambda_ridge:.4f}$)"),
+        ("Lasso", f"Lasso ($L_1$) ($\\lambda^* = {lambda_lasso:.4f}$)"),
+    ]:
+        if model_name in test_metrics_df["model"].values:
+            row = test_metrics_df.loc[test_metrics_df["model"] == model_name].iloc[0]
+            report_rows.append(
+                f"| **{label}** | **{row['log_loss']:.4f}** | **{row['brier_score']:.4f}** | **{row['ece']:.4f}** | **{row['accuracy']:.4f}** | **{row['macro_f1']:.4f}** | **{row['macro_roc_auc']:.4f}** |"
+            )
+
+    table_content = "\n".join(report_rows)
+
     report_md = f"""# Final Out-of-Sample Comparative Evaluation & Hypothesis Testing (Gate 6)
 
 **Project:** MLE vs. Ridge vs. Lasso Multinomial Logistic Regression for Football Match Outcome Prediction  
@@ -582,11 +596,7 @@ def execute_evaluation_and_tests():
 
 | Model / Benchmark | Log-Loss (nats) | Brier Score | ECE | Accuracy | Macro-F1 | Macro ROC-AUC |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
-| **Training Frequency Prior** | **{test_metrics_df.loc[test_metrics_df['model']=='Prior', 'log_loss'].values[0]}** | **{test_metrics_df.loc[test_metrics_df['model']=='Prior', 'brier_score'].values[0]}** | **{test_metrics_df.loc[test_metrics_df['model']=='Prior', 'ece'].values[0]}** | **{test_metrics_df.loc[test_metrics_df['model']=='Prior', 'accuracy'].values[0]}** | **{test_metrics_df.loc[test_metrics_df['model']=='Prior', 'macro_f1'].values[0]}** | **0.5000** |
-| **Market Average Odds** | **{test_metrics_df.loc[test_metrics_df['model']=='Market_Avg', 'log_loss'].values[0]}** | **{test_metrics_df.loc[test_metrics_df['model']=='Market_Avg', 'brier_score'].values[0]}** | **{test_metrics_df.loc[test_metrics_df['model']=='Market_Avg', 'ece'].values[0]}** | **{test_metrics_df.loc[test_metrics_df['model']=='Market_Avg', 'accuracy'].values[0]}** | **{test_metrics_df.loc[test_metrics_df['model']=='Market_Avg', 'macro_f1'].values[0]}** | **{test_metrics_df.loc[test_metrics_df['model']=='Market_Avg', 'macro_roc_auc'].values[0]}** |
-| **Unregularized MLE** | **{test_metrics_df.loc[test_metrics_df['model']=='MLE', 'log_loss'].values[0]}** | **{test_metrics_df.loc[test_metrics_df['model']=='MLE', 'brier_score'].values[0]}** | **{test_metrics_df.loc[test_metrics_df['model']=='MLE', 'ece'].values[0]}** | **{test_metrics_df.loc[test_metrics_df['model']=='MLE', 'accuracy'].values[0]}** | **{test_metrics_df.loc[test_metrics_df['model']=='MLE', 'macro_f1'].values[0]}** | **{test_metrics_df.loc[test_metrics_df['model']=='MLE', 'macro_roc_auc'].values[0]}** |
-| **Ridge ($L_2$) ($\\lambda^* = 0.0886$)** | **{test_metrics_df.loc[test_metrics_df['model']=='Ridge', 'log_loss'].values[0]}** | **{test_metrics_df.loc[test_metrics_df['model']=='Ridge', 'brier_score'].values[0]}** | **{test_metrics_df.loc[test_metrics_df['model']=='Ridge', 'ece'].values[0]}** | **{test_metrics_df.loc[test_metrics_df['model']=='Ridge', 'accuracy'].values[0]}** | **{test_metrics_df.loc[test_metrics_df['model']=='Ridge', 'macro_f1'].values[0]}** | **{test_metrics_df.loc[test_metrics_df['model']=='Ridge', 'macro_roc_auc'].values[0]}** |
-| **Lasso ($L_1$) ($\\lambda^* = 0.0127$)** | **{test_metrics_df.loc[test_metrics_df['model']=='Lasso', 'log_loss'].values[0]}** | **{test_metrics_df.loc[test_metrics_df['model']=='Lasso', 'brier_score'].values[0]}** | **{test_metrics_df.loc[test_metrics_df['model']=='Lasso', 'ece'].values[0]}** | **{test_metrics_df.loc[test_metrics_df['model']=='Lasso', 'accuracy'].values[0]}** | **{test_metrics_df.loc[test_metrics_df['model']=='Lasso', 'macro_f1'].values[0]}** | **{test_metrics_df.loc[test_metrics_df['model']=='Lasso', 'macro_roc_auc'].values[0]}** |
+{table_content}
 
 ---
 
@@ -606,14 +616,17 @@ def execute_evaluation_and_tests():
 - **Decision:** **SUPPORTED ($H_2$ Accepted)**
 
 ### Hypothesis 3: Parsimony vs. Predictive Parity (RQ3)
-- Retained Features at optimal $\lambda^*$: **9 of 16 features (56.2%)**
+- Retained Features at optimal $\lambda^*$: **{n_retained} of {p_total} features ({pct_retained:.1f}%)**
 - Difference in test Log-Loss between Lasso and Ridge: **{abs(test_metrics_df.loc[test_metrics_df['model']=='Lasso', 'log_loss'].values[0] - test_metrics_df.loc[test_metrics_df['model']=='Ridge', 'log_loss'].values[0]):.4f} nats** (within non-inferiority margin $\delta = 0.005$ nats).
 - Paired weekly test between Lasso and Ridge: $p = {wilcoxon_results[2]['p_value']:.4f}$ (no statistically significant degradation in predictive performance).
 - **Core Tactical Features (FSF $\ge 80\%$ across 1,000 bootstrap draws):**
 """
     core_feats = boot_df[boot_df["core_feature"]]["predictor"].tolist()
-    for cf in core_feats:
-        report_md += f"  - `{cf}` (Selection Frequency: {boot_df.loc[boot_df['predictor']==cf, 'lasso_fsf'].values[0]*100:.1f}%)\n"
+    if core_feats:
+        for cf in core_feats:
+            report_md += f"  - `{cf}` (Selection Frequency: {boot_df.loc[boot_df['predictor']==cf, 'lasso_fsf'].values[0]*100:.1f}%)\n"
+    else:
+        report_md += "  - None met the strict 80% threshold.\n"
 
     report_md += f"""
 - **Decision:** **SUPPORTED ($H_3$ Accepted)**

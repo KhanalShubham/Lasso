@@ -11,21 +11,23 @@
 ```mermaid
 sequenceDiagram
     autonumber
-    participant Ext as Remote Sources (FBref / Football-Data)
-    participant Raw as data/raw/ (Immutable)
-    participant Feat as src/features.py
-    participant Proc as data/processed/ (Canonical Tabular)
+    participant Ext as Remote Source (OpenFootball GitHub)
+    participant Raw as data/raw/openfootball/ (Immutable CC0)
+    participant Proc as data/processed/epl_matches.csv
+    participant Feat as src/features_openfootball.py
+    participant FeatOut as data/features/dataset_features.csv
     participant Split as src/data_split.py
     participant Mod as src/models/ (MLE / Ridge / Lasso)
     participant Eval as src/evaluation.py
     participant Rep as reports/
 
-    Ext->>Raw: Download raw schedules & match CSVs
-    Raw->>Feat: Ingest chronological completed fixtures
+    Ext->>Raw: Download raw Football.TXT schedules & results
+    Raw->>Proc: Parse matchdays, dates, normalize 26 teams, compute targets
+    Proc->>Feat: Ingest chronological completed fixtures (1,900 rows)
     Feat->>Feat: Apply rolling operator strictly over past matches (j >= 1)
     Feat->>Feat: Calculate differentials (Delta X = Home - Away)
-    Feat->>Proc: Export dataset_features.csv (N=1,900, 16 features, 1,741 ready)
-    Proc->>Split: Partition into Train, Val, Test (modelling-ready rows)
+    Feat->>FeatOut: Export dataset_features.csv (N=1,900, 1,741 ready)
+    FeatOut->>Split: Partition into Train, Val, Test (modelling-ready rows)
     Split->>Split: Fit scaler strictly on Train, freeze to scalers.joblib
     Split->>Mod: Pass standardized X_train, X_val, y_train, y_val
     Mod->>Mod: Fit MLE, tune Ridge & Lasso lambda on Val
@@ -37,25 +39,32 @@ sequenceDiagram
 
 ## 2. Stage-by-Stage Transformation Contracts
 
-### Stage 1: Raw Ingestion
-- **Inputs:** External HTTPS GET requests.
-- **Outputs:**
-  - `data/raw/fbref/{season}/schedule.csv`: 380 rows $\times$ 16 columns.
-  - `data/raw/football_data/premier_league_{season}.csv`: 380 rows $\times$ 106 columns.
-- **Contract:** Immutable raw files; exact match counts verified (1,900 total).
+### Stage 1: Public-Domain Raw Ingestion
+- **Inputs:** HTTPS GET requests to `https://raw.githubusercontent.com/openfootball/england/master/{season}/1-premierleague.txt`.
+- **Outputs:** `data/raw/openfootball/{season}/1-premierleague.txt` (380 matches per season $\times$ 5 = 1,900 matches).
+- **Contract:** Immutable raw files under CC0-1.0; SHA-256 hashes recorded in manifest.
 
-### Stage 2: Feature Engineering & Pre-Match Aggregation
-- **Inputs:** `data/raw/` fixture schedules and validated match volume logs.
+### Stage 2: Canonical Match Processing
+- **Inputs:** `data/raw/openfootball/` raw seasonal text files.
 - **Transformations:**
-  1. Sort all matches by chronological kickoff timestamp.
-  2. Compute rolling moving averages $\bar{X}_t^{(k)}$ strictly over past $k$ fixtures ($j \in [1, k]$).
-  3. Apply promoted-team cold-start synthetic baseline prior.
-  4. Compute symmetrical differential $\Delta X_t^{(k)} = \bar{X}_{\text{Home}, t}^{(k)} - \bar{X}_{\text{Away}, t}^{(k)}$.
-- **Outputs:** `data/features/dataset_features.csv` (1,900 rows with `is_modelling_ready` flag, 16 continuous differential predictors, target labels).
+  1. Parse Football.TXT dates, matchdays, team names, and final scores.
+  2. Map 38 raw club string variants to 26 canonical Premier League clubs.
+  3. Derive 3-class target: Home Win (2), Draw (1), Away Win (0).
+  4. Chronological sorting by date and time.
+- **Outputs:** `data/processed/epl_matches.csv` (1,900 rows, 11 columns, 0 nulls).
+
+### Stage 3: Result-Derived Feature Engineering
+- **Inputs:** `data/processed/epl_matches.csv`.
+- **Transformations:**
+  1. Sort all matches strictly chronologically by date and kickoff time.
+  2. Compute rolling moving averages strictly over past $k$ fixtures ($j \in [1, k]$): goals scored, goals conceded, points per game, goal difference, venue form, rest days.
+  3. Compute symmetrical differentials $\Delta X_t = X_{\text{Home}, t} - X_{\text{Away}, t}$.
+  4. Flag warm-up fixtures ($k < 10$ overall or $k < 5$ venue) as `is_modelling_ready = False`.
+- **Outputs:** `data/features/dataset_features.csv` (1,900 rows, with `is_modelling_ready` flag and result-derived predictors).
 - **Leakage Invariant:** Values for match $t$ must never be modified by events taking place during or after match $t$.
 
-### Stage 3: Chronological Splitting & Preprocessing
-- **Inputs:** `data/features/dataset_features.csv` (filtered to `is_modelling_ready == True`, $N = 1,741$).
+### Stage 4: Chronological Splitting & Preprocessing
+- **Inputs:** `data/features/dataset_features.csv` (filtered to `is_modelling_ready == True`).
 - **Transformations:**
   1. Chronological partition into Train (`2019/20`–`2021/22`), Val (`2022/23`), Test (`2023/24`).
   2. Fit Z-score standardizers ($z = (x - \mu)/\sigma$) strictly on Train.

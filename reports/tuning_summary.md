@@ -11,36 +11,28 @@
 | Model / Benchmark | Penalty $\lambda$ | Sklearn $C$ | Validation Log-Loss | Validation Brier | Validation Accuracy | Notes / Sparsity |
 | :--- | :---: | :---: | :---: | :---: | :---: | :--- |
 | **Naive Frequency Prior** | — | — | `1.0581` | `0.6391` | `0.4838` | Static training marginal rates |
-| **Market Average Odds** | — | — | `0.9684` | `0.5755` | `0.5595` | Consensus betting benchmark |
-| **Unregularized MLE** | $0$ | $\infty$ | `1.0146` | `0.6048` | `0.5459` | Full unconstrained model |
-| **Ridge ($L_2$) Optimal** | **`0.0886`** | **`0.005633`** | **`1.0016`** | **`0.5984`** | **`0.5378`** | $\text{df}(\lambda) = 8.73$ |
-| **Lasso ($L_1$) Optimal** | **`0.0127`** | **`0.078319`** | **`1.0003`** | **`0.5978`** | **`0.5324`** | **9 / 16 features** (56.2%) |
+| **Market Average Odds** | — | — | `nan` | `nan` | `nan` | Consensus betting benchmark |
+| **Unregularized MLE** | $0$ | $\infty$ | `1.0291` | `0.6164` | `0.5000` | Full unconstrained model |
+| **Ridge ($L_2$) Optimal** | **`0.0886`** | **`0.005633`** | **`1.0153`** | **`0.6084`** | **`0.5189`** | $\text{df}(\lambda) = 5.90$ |
+| **Lasso ($L_1$) Optimal** | **`0.0336`** | **`0.029704`** | **`1.0140`** | **`0.6076`** | **`0.5108`** | **2 / 8 features** (25.0%) |
 
 ---
 
 ## 2. Optimal Lasso Feature Selection
 
-The optimal Lasso model ($\lambda^* = 0.0127$) retained **9 of 16 candidate predictors**:
+The optimal Lasso model ($\lambda^* = 0.0336$) retained **2 of 8 candidate predictors**:
 
 - **Retained Features:**
-  - `diff_shots_k5`
-  - `diff_shotsA_k5`
-  - `diff_shot_dominance_k5`
-  - `diff_corners_k5`
-  - `diff_fouls_k5`
-  - `diff_yellows_k5`
-  - `diff_goal_diff_k5`
+  - `diff_goals_conceded_k5`
   - `diff_goal_diff_k10`
-  - `diff_rest_days`
 
 - **Eliminated (Shrunk to Exactly Zero):**
-  - `diff_sot_k5`
-  - `diff_sotA_k5`
-  - `diff_sot_ratio_k5`
-  - `diff_cornersA_k5`
-  - `diff_clean_sheets_k10`
+  - `diff_goals_scored_k5`
   - `diff_ppg_k5`
   - `diff_venue_ppg_k5`
+  - `diff_rest_days`
+  - `diff_clean_sheets_k10`
+  - `diff_win_rate_k5`
 
 ---
 

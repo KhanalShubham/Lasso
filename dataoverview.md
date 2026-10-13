@@ -27,17 +27,16 @@ The dataset represents completed English Premier League matches across five cons
 
 ## 2. Ingested Datasets
 
-### A. FBref Fixture Schedules (`data/raw/fbref/`)
-- **Origin:** FBref / Opta Sports via `soccerdata` (version 1.9.1).
-- **Format:** CSV files per season plus unified 1,900-match schedule.
+### A. Primary Research Source: OpenFootball England (`data/raw/openfootball/`)
+- **Origin:** OpenFootball project (`https://github.com/openfootball/england`).
+- **License:** CC0-1.0 Universal Public Domain Dedication.
+- **Format:** Plaintext `Football.TXT` structured fixtures per season (`1-premierleague.txt`).
 - **Verified Row Count:** Exactly 380 rows per season; 1,900 rows combined.
-- **Key Attributes:** Match date, kickoff time, round/matchweek, venue, home club, away club, scoreline, referee, and unique Opta match identifier (`game_id`).
+- **Key Attributes:** Match date (`YYYY-MM-DD`), kickoff time (`HH:MM`), nominal matchday round (1–38), home club, away club, and full-time scoreline.
+- **Processed Canonical Output:** `data/processed/epl_matches.csv` (1,900 rows, 11 columns, 0 missing).
 
-### B. Football-Data.co.uk Results & Match Stats (`data/raw/football_data/`)
-- **Origin:** Football-Data.co.uk historical archive.
-- **Format:** CSV files per season (`premier_league_{season}.csv`).
-- **Verified Row Count:** Exactly 380 rows per season (1,900 rows total); 106 columns per file.
-- **Key Attributes:** Full-time goals (`FTHG`, `FTAG`), result (`FTR`), half-time goals (`HTHG`, `HTAG`), total shots (`HS`, `AS`), shots on target (`HST`, `AST`), fouls (`HF`, `AF`), corners (`HC`, `AC`), cards (`HY`, `AY`, `HR`, `AR`), and comprehensive bookmaker betting odds.
+### B. Legacy Archives: Football-Data.co.uk & FBref (`data/raw/football_data/`, `data/raw/fbref/`)
+- **Status:** Deprecated legacy archives, preserved strictly for historical provenance and audit traceability. Excluded from active modeling per ADR-013.
 
 ---
 

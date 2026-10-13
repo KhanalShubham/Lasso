@@ -1,17 +1,9 @@
 predictor,vif,r_squared,collinearity_cluster,top_correlate,max_pearson_r
-diff_shot_dominance_k5,74.14,0.9865,Shot Volume & Dominance,diff_shotsA_k5,-0.8928
-diff_shots_k5,48.23,0.9793,Shot Volume & Dominance,diff_shot_dominance_k5,0.8888
-diff_sot_k5,45.06,0.9778,Shot Quality & Precision,diff_shots_k5,0.7924
-diff_shotsA_k5,26.24,0.9619,Shot Volume & Dominance,diff_shot_dominance_k5,-0.8928
-diff_sot_ratio_k5,16.75,0.9403,Shot Quality & Precision,diff_sot_k5,0.6429
-diff_goal_diff_k5,8.4,0.881,Form & Goal Difference,diff_ppg_k5,0.8861
-diff_goal_diff_k10,6.33,0.842,Form & Goal Difference,diff_goal_diff_k5,0.8429
-diff_ppg_k5,5.46,0.8168,Form & Goal Difference,diff_goal_diff_k5,0.8861
-diff_sotA_k5,3.24,0.6918,Shot Quality & Precision,diff_shotsA_k5,0.7838
-diff_venue_ppg_k5,2.36,0.5755,Form & Goal Difference,diff_goal_diff_k10,0.7196
-diff_cornersA_k5,2.21,0.5481,Territorial Set Pieces,diff_shot_dominance_k5,-0.7045
-diff_clean_sheets_k10,2.16,0.5363,Defensive Solidity,diff_goal_diff_k10,0.6879
-diff_corners_k5,1.98,0.4938,Territorial Set Pieces,diff_shots_k5,0.6757
-diff_yellows_k5,1.33,0.2476,Disciplinary & Aggression,diff_fouls_k5,0.4268
-diff_fouls_k5,1.25,0.2024,Disciplinary & Aggression,diff_yellows_k5,0.4268
-diff_rest_days,1.03,0.0275,Schedule Congestion,diff_corners_k5,-0.0957
+diff_ppg_k5,24.63,0.9594,Recent Form & Momentum,diff_win_rate_k5,0.9662
+diff_win_rate_k5,17.23,0.9419,Win Conversion Rate,diff_ppg_k5,0.9662
+diff_goal_diff_k10,5.76,0.8263,Sustained Structural Quality,diff_ppg_k5,0.756
+diff_goals_scored_k5,4.24,0.764,Attacking Threat & Output,diff_ppg_k5,0.7455
+diff_goals_conceded_k5,3.53,0.7167,Defensive Concession,diff_ppg_k5,-0.7013
+diff_venue_ppg_k5,2.34,0.5735,Venue-Specific Home/Away Form,diff_goal_diff_k10,0.7196
+diff_clean_sheets_k10,2.28,0.5619,Defensive Solidity & Shutouts,diff_goal_diff_k10,0.6879
+diff_rest_days,1.01,0.0084,Schedule Congestion & Rest,diff_goal_diff_k10,-0.0727

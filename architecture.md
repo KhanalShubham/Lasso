@@ -8,28 +8,27 @@
 
 ## 1. High-Level Modular Architecture
 
-The research codebase is organized into five decoupled, reproducible modules:
+The research codebase is organized into decoupled, reproducible modules operating on public-domain OpenFootball data (ADR-013):
 
 ```mermaid
 graph TD
-    subgraph M1["Module 1: Ingestion & Provenance"]
-        DC["src/data_collection.py"] --> RAW_FB["data/raw/fbref/"]
-        DC --> RAW_FD["data/raw/football_data/"]
-        RAW_FB & RAW_FD --> AUDIT["src/data_audit.py"]
-        AUDIT --> AUDIT_OUT["data/audit/"]
+    subgraph M1["Module 1: Public-Domain Ingestion & Provenance"]
+        DC["src/data_collection_openfootball.py"] --> RAW_OF["data/raw/openfootball/{season}/ (CC0-1.0)"]
+        RAW_OF --> PROC["src/data_processing_openfootball.py"]
+        PROC --> MATCHES["data/processed/epl_matches.csv (1,900 rows)"]
     end
 
-    subgraph M2["Module 2: Feature Engineering & Cold-Start"]
-        RAW_FB & RAW_FD --> FEAT["src/features.py"]
-        COLD["src/cold_start.py (Synthetic Prior)"] --> FEAT
-        FEAT --> PROC_DATA["data/processed/dataset_final.csv"]
+    subgraph M2["Module 2: Result-Derived Feature Engineering"]
+        MATCHES --> FEAT["src/features_openfootball.py"]
+        FEAT --> FEAT_DATA["data/features/dataset_features.csv (N=1,900)"]
+        FEAT --> DICT["data/features/feature_dictionary.md"]
     end
 
     subgraph M3["Module 3: Preprocessing & Chronological Splitting"]
-        PROC_DATA --> SPLIT["src/data_split.py"]
-        SPLIT --> TR["Train Set (19/20 - 21/22: N=1,002 ready)"]
-        SPLIT --> VAL["Val Set (22/23: N=370 ready)"]
-        SPLIT --> TE["Test Set (23/24: N=369 ready)"]
+        FEAT_DATA --> SPLIT["src/data_split.py"]
+        SPLIT --> TR["Train Set (19/20 - 21/22)"]
+        SPLIT --> VAL["Val Set (22/23)"]
+        SPLIT --> TE["Test Set (23/24)"]
         SPLIT --> SCALER["data/processed/scalers.joblib (Frozen)"]
     end
 
@@ -53,13 +52,13 @@ graph TD
 
 ## 2. Component Responsibilities
 
-1. **`src/data_collection.py`:** Handles network downloads, rate-limiting delays (7s for FBref), and caches raw CSV files. Raw data remains immutable.
-2. **`src/data_audit.py`:** Verifies row counts, checks duplicate fixtures, reconciles team names, and audits predictor availability.
-3. **`src/features.py`:** Computes rolling $k$-match differential features ($\Delta X = X_{\text{Home}} - X_{\text{Away}}$) strictly using past matches ($j \ge 1$).
-4. **`src/cold_start.py`:** Implements synthetic baseline prior protocol for newly promoted clubs using 3-year historical relegation averages.
-5. **`src/data_split.py`:** Enforces chronological partitioning (Train: 19/20–21/22, Val: 22/23, Test: 23/24) and freezes training scalers.
-6. **`src/models/`:** Encapsulates model calibration:
+1. **`src/data_collection_openfootball.py`:** Downloads raw Football.TXT files and LICENSE.md from OpenFootball GitHub repository (`https://github.com/openfootball/england`) under CC0-1.0 Public Domain Dedication and records cryptographic SHA-256 hashes.
+2. **`src/data_processing_openfootball.py`:** Parses Football.TXT syntax, normalizes club names to 26 canonical EPL entities, derives 3-class targets (`HOME_WIN`, `DRAW`, `AWAY_WIN`), sorts chronologically, and exports `data/processed/epl_matches.csv` (1,900 rows).
+3. **`src/features_openfootball.py`:** Computes result-derived rolling $k$-match differential features ($\Delta X = X_{\text{Home}} - X_{\text{Away}}$) strictly using past matches ($j \ge 1$), isolates warm-up fixtures ($N = 159$), and generates `data/features/dataset_features.csv`.
+4. **`src/data_split.py`:** Enforces chronological partitioning (Train: 19/20–21/22, Val: 22/23, Test: 23/24) and freezes training scalers.
+5. **`src/models/`:** Encapsulates model calibration:
    - `mle_model.py`: Classical unregularized multinomial logistic regression via statsmodels/scikit-learn.
    - `ridge_model.py`: $L_2$-regularized multinomial logistic regression with L-BFGS solver.
    - `lasso_model.py`: $L_1$-regularized multinomial logistic regression with SAGA solver.
-7. **`src/evaluation.py`:** Computes proper scoring rules (Log-Loss, Brier score), ECE, paired Wilcoxon tests, McNemar tests, and bootstrap stability indices.
+6. **`src/evaluation.py`:** Computes proper scoring rules (Log-Loss, Brier score), ECE, paired Wilcoxon tests, McNemar tests, and bootstrap stability indices.
+

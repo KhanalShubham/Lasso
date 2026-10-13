@@ -55,24 +55,30 @@ graph LR
 
 ---
 
-## Gate 3: Feature Engineering Validated for Temporal Leakage
+## Gate 3: Feature Engineering Validated for Temporal Leakage (OpenFootball Pipeline)
 
-- **Objective:** Construct the 16 pre-match differential predictors ($\Delta X$) strictly from historical match data without temporal lookahead bias.
-- **Prerequisites:** Gate 2 passed; ADR-007 (Option A) explicitly approved by user on 12 October 2026.
+- **Objective:** Construct the result-derived pre-match differential predictors ($\Delta X$) strictly from public-domain OpenFootball historical match data without temporal lookahead bias (ADR-013).
+- **Prerequisites:** OpenFootball raw ingestion verified; ADR-013 accepted.
 - **Exit Criteria / Checklists:**
-  - [x] Canonical match order is strictly chronological by kickoff timestamp, not Gameweek round number.
+  - [x] Canonical match order is strictly chronological by kickoff timestamp, not nominal matchday round.
   - [x] Moving average operator strictly excludes current match $t$ ($j \ge 1$ for all summation indices).
-  - [x] In-match events (goals, cards, shots during the 90 minutes of the match being predicted) are strictly excluded from the covariate vector.
+  - [x] Ground truth targets and in-match scores are strictly excluded from the pre-match covariate vector.
   - [x] Differential calculation follows $\Delta X = X_{\text{Home}} - X_{\text{Away}}$.
   - [x] Warm-up observations ($N = 159$) are explicitly audited and separated from modelling-ready rows ($N = 1,741$).
-  - [x] Unit tests verify that mutating current/future match values does not alter pre-match feature vectors (leakage assertion test).
-- **Verification Command:** `python -m pytest tests/test_features.py tests/test_leakage.py -v` (20/20 passed)
+  - [x] Warm-up missingness is strictly preserved as `NaN` (zero-imputation prohibited).
+  - [x] Automated unit and leakage test suite passes all assertions without errors (`python -m pytest tests/test_openfootball_pipeline.py -v`: 15/15 passed).
+  - [x] Data quality and migration audit reports generated.
+  - [x] **Methodological review and user approval of revised OpenFootball feature portfolio.**
+- **Verification Command:** `python -m pytest tests/test_openfootball_pipeline.py -v` (15/15 passed)
 - **Deliverables Produced:**
-  - Feature script: [`src/features.py`](file:///d:/MLE-Lasso/src/features.py)
-  - Feature dataset: [`data/features/dataset_features.csv`](file:///d:/MLE-Lasso/data/features/dataset_features.csv) (1,900 rows, 27 cols)
-  - Feature audits: [`data/audit/feature_availability_audit.csv`](file:///d:/MLE-Lasso/data/audit/feature_availability_audit.csv), [`data/audit/feature_missingness_audit.csv`](file:///d:/MLE-Lasso/data/audit/feature_missingness_audit.csv)
-  - Comprehensive report: [`data/audit/feature_engineering_report.md`](file:///d:/MLE-Lasso/data/audit/feature_engineering_report.md)
-  - Test suites: [`tests/test_features.py`](file:///d:/MLE-Lasso/tests/test_features.py), [`tests/test_leakage.py`](file:///d:/MLE-Lasso/tests/test_leakage.py)
+  - Feature script: [`src/features_openfootball.py`](file:///d:/MLE-Lasso/src/features_openfootball.py)
+  - Canonical match table: [`data/processed/epl_matches.csv`](file:///d:/MLE-Lasso/data/processed/epl_matches.csv) (1,900 rows, 11 cols)
+  - Feature dataset: [`data/features/dataset_features.csv`](file:///d:/MLE-Lasso/data/features/dataset_features.csv) (1,900 rows, 39 cols)
+  - Feature dictionary: [`data/features/feature_dictionary.md`](file:///d:/MLE-Lasso/data/features/feature_dictionary.md)
+  - Migration report: [`reports/openfootball_migration_report.md`](file:///d:/MLE-Lasso/reports/openfootball_migration_report.md)
+  - Feature engineering report: [`reports/feature_engineering_report.md`](file:///d:/MLE-Lasso/reports/feature_engineering_report.md)
+  - Data quality report: [`reports/data_quality_report.md`](file:///d:/MLE-Lasso/reports/data_quality_report.md)
+  - Test suite: [`tests/test_openfootball_pipeline.py`](file:///d:/MLE-Lasso/tests/test_openfootball_pipeline.py) (15/15 PASS)
 - **Status:** **PASSED**
 
 ---
@@ -88,7 +94,7 @@ graph LR
   - [x] Standardization means ($\hat{\mu}$) and standard deviations ($\hat{\sigma}$) fitted **strictly on training split**.
   - [x] Imputation medians and class-frequency priors computed strictly on training split ($N=1,002$).
   - [x] Collinearity diagnostics (Variance Inflation Factors, VIF) computed on training split and documented.
-- **Verification Command:** `pytest tests/test_preprocessing.py` (6/6 passed)
+- **Verification Command:** `python -m pytest tests/test_preprocessing.py -v` (6/6 passed)
 - **Deliverables Produced:**
   - Splitting pipeline: [`src/data_split.py`](file:///d:/MLE-Lasso/src/data_split.py)
   - Processed splits: `data/processed/train_data.csv`, `val_data.csv`, `test_data.csv`
@@ -104,12 +110,12 @@ graph LR
 - **Objective:** Calibrate unregularized MLE, Ridge ($L_2$), and Lasso ($L_1$) multinomial logistic regression models on the training split and optimize regularization parameters on the validation split.
 - **Prerequisites:** Gate 4 passed.
 - **Exit Criteria / Checklists:**
-  - [x] Unregularized MLE converges without singular matrix exceptions; condition number of Hessian documented.
+  - [x] Unregularized MLE converges without singular matrix exceptions; condition number of Hessian documented ($\kappa(\mathbf{H}_0) = 195.96$).
   - [x] Ridge ($L_2$) cross-entropy loss convex optimization verified with `lbfgs` solver.
   - [x] Lasso ($L_1$) sparsity verified with `saga` solver; coordinate shrinkage path traced.
-  - [x] Optimal regularization parameters ($\lambda_{\text{Ridge}}^* = 0.0886$, $\lambda_{\text{Lasso}}^* = 0.0127$) selected via minimum Log-Loss on Season 2022/23 validation partition.
+  - [x] Optimal regularization parameters ($\lambda_{\text{Ridge}}^* = 0.0886$, $\lambda_{\text{Lasso}}^* = 0.0336$) selected via minimum Log-Loss on Season 2022/23 validation partition.
   - [x] Convergence tolerances, solver iterations, and parameter vectors documented.
-- **Verification Command:** `pytest tests/test_models.py` (4/4 passed)
+- **Verification Command:** `python -m pytest tests/test_models.py -v` (4/4 passed)
 - **Deliverables Produced:**
   - Estimators: `src/models/mle_model.py`, `ridge_model.py`, `lasso_model.py`
   - Tuning engine: [`src/models/train_and_tune.py`](file:///d:/MLE-Lasso/src/models/train_and_tune.py)
@@ -133,7 +139,7 @@ graph LR
   - [x] Hypothesis $H_3$ tested: Lasso Feature Selection Frequency (FSF) quantifying sparsity and identifying the Core Tactical Feature Set ($\text{FSF} \ge 80\%$).
   - [x] Classification divergence tested via McNemar's test with continuity correction.
   - [x] Final research report and visualization figures exported to `reports/`.
-- **Verification Command:** `python src/evaluation.py` and `pytest tests/test_evaluation.py` (6/6 passed; 36/36 repository tests passed)
+- **Verification Command:** `python -m pytest tests/test_openfootball_pipeline.py tests/test_preprocessing.py tests/test_models.py tests/test_evaluation.py -v` (31/31 passed)
 - **Deliverables Produced:**
   - Metrics table: [`reports/test_metrics.csv`](file:///d:/MLE-Lasso/reports/test_metrics.csv)
   - Wilcoxon tests: [`reports/wilcoxon_results.csv`](file:///d:/MLE-Lasso/reports/wilcoxon_results.csv)

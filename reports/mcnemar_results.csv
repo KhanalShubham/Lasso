@@ -1,4 +1,4 @@
 comparison,n_correct_both,n_correct_A_only,n_correct_B_only,n_wrong_both,total_discordant,chi2_stat,p_value,statistically_divergent
-MLE vs. Ridge,195,12,11,151,23,0.0,1.0,False
-MLE vs. Lasso,196,11,12,150,23,0.0,1.0,False
-Ridge vs. Lasso,197,9,11,152,20,0.05,0.8231,False
+MLE vs. Ridge,190,11,14,154,25,0.16,0.6892,False
+MLE vs. Lasso,198,3,6,162,9,0.4444,0.505,False
+Ridge vs. Lasso,194,10,10,155,20,0.05,0.8231,False

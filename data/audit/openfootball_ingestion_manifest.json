@@ -1,0 +1,49 @@
+{
+  "source_repository": "https://github.com/openfootball/england",
+  "licence": "CC0-1.0 Public Domain Dedication",
+  "licence_url": "https://raw.githubusercontent.com/openfootball/england/master/LICENSE.md",
+  "retrieval_timestamp_utc": "2026-10-13T10:50:54.854154+00:00",
+  "files": {
+    "LICENSE.md": {
+      "url": "https://raw.githubusercontent.com/openfootball/england/master/LICENSE.md",
+      "path": "data/raw/openfootball/LICENSE.md",
+      "size_bytes": 6555,
+      "sha256": "36ffd9dc085d529a7e60e1276d73ae5a030b020313e6c5408593a6ae2af39673"
+    },
+    "2019-20/1-premierleague.txt": {
+      "url": "https://raw.githubusercontent.com/openfootball/england/master/2019-20/1-premierleague.txt",
+      "path": "data/raw/openfootball/2019-20/1-premierleague.txt",
+      "size_bytes": 25416,
+      "sha256": "fdc8300c09e0700faa0c517ff408bc630b8b6a77b6f1aa68e5858f9adae6f72d",
+      "season": "2019-20"
+    },
+    "2020-21/1-premierleague.txt": {
+      "url": "https://raw.githubusercontent.com/openfootball/england/master/2020-21/1-premierleague.txt",
+      "path": "data/raw/openfootball/2020-21/1-premierleague.txt",
+      "size_bytes": 27068,
+      "sha256": "2123fa19c676d0194c69380dceb61f9413bfe6b89eb6c538cd269d8d856ba255",
+      "season": "2020-21"
+    },
+    "2021-22/1-premierleague.txt": {
+      "url": "https://raw.githubusercontent.com/openfootball/england/master/2021-22/1-premierleague.txt",
+      "path": "data/raw/openfootball/2021-22/1-premierleague.txt",
+      "size_bytes": 26953,
+      "sha256": "592df232fbc7c2f36ec3e643eef608f77fcbf7d8da0706c94c99248d60b932b3",
+      "season": "2021-22"
+    },
+    "2022-23/1-premierleague.txt": {
+      "url": "https://raw.githubusercontent.com/openfootball/england/master/2022-23/1-premierleague.txt",
+      "path": "data/raw/openfootball/2022-23/1-premierleague.txt",
+      "size_bytes": 26495,
+      "sha256": "c85a2f8ac64975435b8359eb923eaa09e48f33d47672c8b32d2c6e99a8cec5f0",
+      "season": "2022-23"
+    },
+    "2023-24/1-premierleague.txt": {
+      "url": "https://raw.githubusercontent.com/openfootball/england/master/2023-24/1-premierleague.txt",
+      "path": "data/raw/openfootball/2023-24/1-premierleague.txt",
+      "size_bytes": 26357,
+      "sha256": "0bfb4a7fffe0b1bf7318955686eafeb28fc9676346ae433259e7409d69551450",
+      "season": "2023-24"
+    }
+  }
+}

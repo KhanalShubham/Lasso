@@ -17,60 +17,51 @@
 
 ## 2. Ingested Datasets Inventory
 
-### 2.1 Secondary Validation Source: Football-Data.co.uk
+### 2.1 Primary Active Research Source: OpenFootball England (Public Domain)
 
-- **Provider:** Football-Data.co.uk (Joseph Buchdahl)
-- **Base Portal:** `https://www.football-data.co.uk/englandm.php`
-- **Acquisition Script:** [`src/data_collection.py`](file:///d:/MLE-Lasso/src/data_collection.py)
-- **HTTP Method:** Direct HTTPS GET via `requests==2.34.2`
-- **Collection Timestamp:** 2026-10-12
-- **License / Usage:** Public historical match results and betting odds dataset for academic/research modeling.
+- **Provider:** OpenFootball / Gerald Bauer & Contributors
+- **Repository URL:** `https://github.com/openfootball/england`
+- **Acquisition Script:** [`src/data_collection_openfootball.py`](file:///d:/MLE-Lasso/src/data_collection_openfootball.py)
+- **HTTP Method:** Direct HTTPS GET via `requests==2.34.2` from GitHub raw repository
+- **Collection Timestamp:** 2026-10-13T10:50:54Z
+- **License / Dedication:** **CC0-1.0 Universal Public Domain Dedication** (`LICENSE.md`; SHA-256: `36ffd9dc085d529a7e60e1276d73ae5a030b020313e6c5408593a6ae2af39673`)
+- **Ingestion Manifest:** [`data/audit/openfootball_ingestion_manifest.json`](file:///d:/MLE-Lasso/data/audit/openfootball_ingestion_manifest.json)
+- **Status:** **ACTIVE PRIMARY AND SOLE SOURCE OF TRUTH FOR MATCH FIXTURES & OUTCOMES**
 
-| Season | Download URL | Local Target Path | File Size | Row Count | Col Count | Missing Core Fields |
+| Season | Download URL | Local Target Path | File Size | Row Count | Format | Missing Fields |
 | :--- | :--- | :--- | :---: | :---: | :---: | :---: |
-| **2019-2020** | `https://www.football-data.co.uk/mmz4281/1920/E0.csv` | `data/raw/football_data/premier_league_2019-2020.csv` | 171.36 KB | 380 | 106 | 0 |
-| **2020-2021** | `https://www.football-data.co.uk/mmz4281/2021/E0.csv` | `data/raw/football_data/premier_league_2020-2021.csv` | 171.69 KB | 380 | 106 | 0 |
-| **2021-2022** | `https://www.football-data.co.uk/mmz4281/2122/E0.csv` | `data/raw/football_data/premier_league_2021-2022.csv` | 171.25 KB | 380 | 106 | 0 |
-| **2022-2023** | `https://www.football-data.co.uk/mmz4281/2223/E0.csv` | `data/raw/football_data/premier_league_2022-2023.csv` | 172.05 KB | 380 | 106 | 0 |
-| **2023-2024** | `https://www.football-data.co.uk/mmz4281/2324/E0.csv` | `data/raw/football_data/premier_league_2023-2024.csv` | 168.16 KB | 380 | 106 | 0 |
+| **2019-20** | `https://raw.githubusercontent.com/openfootball/england/master/2019-20/1-premierleague.txt` | `data/raw/openfootball/2019-20/1-premierleague.txt` | 25.42 KB | 380 | Football.TXT | 0 |
+| **2020-21** | `https://raw.githubusercontent.com/openfootball/england/master/2020-21/1-premierleague.txt` | `data/raw/openfootball/2020-21/1-premierleague.txt` | 27.07 KB | 380 | Football.TXT | 0 |
+| **2021-22** | `https://raw.githubusercontent.com/openfootball/england/master/2021-22/1-premierleague.txt` | `data/raw/openfootball/2021-22/1-premierleague.txt` | 26.95 KB | 380 | Football.TXT | 0 |
+| **2022-23** | `https://raw.githubusercontent.com/openfootball/england/master/2022-23/1-premierleague.txt` | `data/raw/openfootball/2022-23/1-premierleague.txt` | 26.50 KB | 380 | Football.TXT | 0 |
+| **2023-24** | `https://raw.githubusercontent.com/openfootball/england/master/2023-24/1-premierleague.txt` | `data/raw/openfootball/2023-24/1-premierleague.txt` | 26.36 KB | 380 | Football.TXT | 0 |
 
-**Core Variables Extracted & Validated:**
-- `Div`: Division identifier (`E0` for EPL)
-- `Date`: Match date (`DD/MM/YYYY`)
-- `Time`: Kickoff time
-- `HomeTeam`, `AwayTeam`: Participating clubs
-- `FTHG`, `FTAG`: Full-time goals (Home / Away)
-- `FTR`: Full-time result (`H`, `D`, `A`)
-- `HTHG`, `HTAG`, `HTR`: Half-time scoreline and result
-- `HS`, `AS`: Total shots taken
-- `HST`, `AST`: Shots on target
-- `HF`, `AF`: Fouls committed
-- `HC`, `AC`: Corner kicks won
-- `HY`, `AY`: Yellow cards received
-- `HR`, `AR`: Red cards received
-- Full market odds: `B365H`, `B365D`, `B365A`, `AvgH`, `AvgD`, `AvgA`, `MaxH`, `MaxD`, `MaxA`
+**Core Variables Extracted & Canonicalized:**
+- `match_id`: Deterministic fixture key (`{season}_GW{matchday:02d}_{home}_v_{away}`)
+- `season`: Season string (`YYYY-YY`)
+- `date`: Official match date (`YYYY-MM-DD`)
+- `time`: Kickoff time (`HH:MM`)
+- `matchday`: Nominal Gameweek round (1 to 38)
+- `home_team`, `away_team`: Canonical normalized club names (26 distinct clubs)
+- `home_goals`, `away_goals`: Integer final scoreline
+- `target`: Categorical outcome label (`HOME_WIN`, `DRAW`, `AWAY_WIN`)
+- `target_multinomial`: Numeric label (`2`: Home Win, `1`: Draw, `0`: Away Win)
 
 ---
 
-### 2.2 Primary Research Source: FBref
+### 2.2 Legacy Archive: Football-Data.co.uk (EXCLUDED FROM ACTIVE PIPELINE)
 
-- **Provider:** Sports Reference LLC / FBref (Advanced stats powered by Opta)
-- **Base Portal:** `https://fbref.com/en/comps/9/Premier-League-Stats`
-- **Acquisition Tool:** `soccerdata` (version 1.9.1) backed by SeleniumBase UC browser driver and local cache
-- **Collection Timestamp:** 2026-10-12
-- **Rate-Limiting Compliance:** 7-second inter-request delay conforming strictly to FBref's 10 requests/min terms of service
-- **Local Cache Location:** `C:\Users\shubh\soccerdata\data\FBref`
+- **Provider:** Football-Data.co.uk (Joseph Buchdahl)
+- **Status:** **LEGACY ARCHIVE ONLY (DEPRECATED)**
+- **Preservation Reason:** Preserved in `data/raw/football_data/` for traceability and prior audit reconciliation; strictly excluded from the active research modeling pipeline per ADR-013.
 
-| Season | FBref Source Endpoint | Local Target Path | File Size | Row Count | Col Count | Missing Core Fields |
-| :--- | :--- | :--- | :---: | :---: | :---: | :---: |
-| **2019-2020** | `/en/comps/9/2019-2020/schedule/` | `data/raw/fbref/2019-2020/schedule.csv` | 90.31 KB | 380 | 16 | 0* |
-| **2020-2021** | `/en/comps/9/2020-2021/schedule/` | `data/raw/fbref/2020-2021/schedule.csv` | 88.92 KB | 380 | 16 | 0* |
-| **2021-2022** | `/en/comps/9/2021-2022/schedule/` | `data/raw/fbref/2021-2022/schedule.csv` | 90.30 KB | 380 | 16 | 0 |
-| **2022-2023** | `/en/comps/9/2022-2023/schedule/` | `data/raw/fbref/2022-2023/schedule.csv` | 90.61 KB | 380 | 16 | 0 |
-| **2023-2024** | `/en/comps/9/2023-2024/schedule/` | `data/raw/fbref/2023-2024/schedule.csv` | 90.23 KB | 380 | 16 | 0 |
-| **Combined** | All 5 seasons concatenated | `data/raw/fbref/fbref_premier_league_2019_2024_schedule.csv` | 449.91 KB | 1,900 | 16 | 0* |
+---
 
-*\*Note on Missing Fields:* The `attendance` column contains 92 missing entries in 2019/20 and 348 missing entries in 2020/21 due to COVID-19 empty-stadium protocols. All fixture metadata (dates, kickoff times, teams, scores, referee, game_id) have zero missing values across all 1,900 fixtures.
+### 2.3 Legacy Archive: FBref (EXCLUDED FROM ACTIVE PIPELINE)
+
+- **Provider:** Sports Reference LLC / FBref (Opta Sports)
+- **Status:** **LEGACY ARCHIVE ONLY (DEPRECATED)**
+- **Preservation Reason:** Preserved in `data/raw/fbref/` for traceability of earlier experimental drafts; strictly excluded from the active research modeling pipeline per ADR-013.
 
 ---
 
@@ -78,9 +69,8 @@
 
 | Stage | Script | Input Files | Output File | Transformation Description |
 | :--- | :--- | :--- | :--- | :--- |
-| **Ingestion** | [`src/data_collection.py`](file:///d:/MLE-Lasso/src/data_collection.py) | Remote HTTP / Cache | `data/raw/football_data/*.csv`, `data/raw/fbref/*/schedule.csv` | Pure extraction, format to CSV, zero alterations. |
-| **Audit** | [`src/data_audit.py`](file:///d:/MLE-Lasso/src/data_audit.py) | All raw CSVs | `data/audit/*.csv`, `data/audit/data_audit_report.md` | Verification of counts, duplicate detection, cross-source fixture reconciliation. |
-| **Features (Gate 3)** | [`src/features.py`](file:///d:/MLE-Lasso/src/features.py) | `data/raw/football_data/*.csv`, `data/raw/fbref/.../schedule.csv` | `data/features/dataset_features.csv`, `data/audit/feature_*.csv` | Chronological rolling $k$-match differential calculation strictly excluding match $t$ ($j \ge 1$). Exactly 1,900 rows ($N=1,741$ modelling ready, $N=159$ warm-up). |
-| **Preprocessing (Gate 4)** | [`src/data_split.py`](file:///d:/MLE-Lasso/src/data_split.py) | `data/features/dataset_features.csv` | `data/processed/train_data.csv`, `val_data.csv`, `test_data.csv`, `scalers.joblib`, `reports/vif_summary.csv` | Chronological train/val/test split (1002/370/369), frozen StandardScaler fitted strictly on train partition. Multicollinearity (VIF and Condition Number) diagnostics. |
-| **Model Calibration (Gate 5)** | [`src/models/train_and_tune.py`](file:///d:/MLE-Lasso/src/models/train_and_tune.py) | `data/processed/train_data.csv`, `val_data.csv` | `data/processed/fitted_models.joblib`, `reports/hyperparameter_tuning.csv`, `reports/figures/fig6_hyperparameter_tuning.png` | 20-point logarithmic grid search over $\lambda \in [10^{-4}, 10^4]$. Model fitting for unregularized MLE, Ridge ($L_2$), and Lasso ($L_1$). Optimal $\lambda^*$ chosen by minimum validation log-loss. |
-| **Evaluation & Hypothesis Testing (Gate 6)** | [`src/evaluation.py`](file:///d:/MLE-Lasso/src/evaluation.py) | `data/processed/test_data.csv`, `data/processed/fitted_models.joblib` | `reports/test_metrics.csv`, `reports/wilcoxon_results.csv`, `reports/mcnemar_results.csv`, `reports/bootstrap_coefficients.csv`, `reports/figures/calibration_curves.png`, `reports/figures/bootstrap_stability.png`, `reports/final_evaluation_report.md` | Out-of-sample evaluation on Season 2023/24 test set ($N=369$). Paired Wilcoxon signed-rank test across 38 gameweeks, McNemar classification test, matchweek block-bootstrap ($B=1,000$), calibration curves, and feature stability. |
+| **Ingestion** | [`src/data_collection_openfootball.py`](file:///d:/MLE-Lasso/src/data_collection_openfootball.py) | OpenFootball GitHub Raw API | `data/raw/openfootball/{season}/1-premierleague.txt`, `LICENSE.md` | Pure download of CC0-1.0 source files, SHA-256 manifest recording. |
+| **Processing** | [`src/data_processing_openfootball.py`](file:///d:/MLE-Lasso/src/data_processing_openfootball.py) | `data/raw/openfootball/` | `data/processed/epl_matches.csv` | Football.TXT parsing, date resolution, team name normalization, final scores, 3-class target creation, chronological sorting. |
+| **Features (Gate 3)** | [`src/features_openfootball.py`](file:///d:/MLE-Lasso/src/features_openfootball.py) | `data/processed/epl_matches.csv` | `data/features/dataset_features.csv`, `data/features/feature_dictionary.md` | Chronological rolling $k$-match differential calculation strictly excluding match $t$ ($j \ge 1$). Result-derived features (goals scored/conceded, PPG, GD, venue PPG, rest days). Exactly 1,900 rows ($N=1,741$ modelling ready, $N=159$ warm-up). |
+| **Quality Audit** | Automated Pipeline Tests | `data/processed/epl_matches.csv`, `data/features/` | `reports/data_quality_report.md`, `reports/openfootball_migration_report.md`, `reports/feature_engineering_report.md` | Automated verification of row counts, chronological monotonic sorting, score validity, zero lookahead leakage, and warm-up isolation. |
+

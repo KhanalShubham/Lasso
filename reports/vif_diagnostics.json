@@ -1,139 +1,75 @@
 {
   "train_sample_size": 1002,
-  "condition_number_design_matrix_kappa_X": 30.63,
-  "condition_number_hessian_kappa_H0": 938.36,
-  "vif_threshold_ge_5_count": 8,
-  "vif_threshold_ge_10_count": 5,
-  "max_vif_feature": "diff_shot_dominance_k5",
-  "max_vif_value": 74.14,
+  "condition_number_design_matrix_kappa_X": 14.0,
+  "condition_number_hessian_kappa_H0": 195.96,
+  "vif_threshold_ge_5_count": 3,
+  "vif_threshold_ge_10_count": 2,
+  "max_vif_feature": "diff_ppg_k5",
+  "max_vif_value": 24.63,
   "vif_rankings": [
     {
-      "predictor": "diff_shot_dominance_k5",
-      "vif": 74.14,
-      "r_squared": 0.9865,
-      "collinearity_cluster": "Shot Volume & Dominance",
-      "top_correlate": "diff_shotsA_k5",
-      "max_pearson_r": -0.8928
+      "predictor": "diff_ppg_k5",
+      "vif": 24.63,
+      "r_squared": 0.9594,
+      "collinearity_cluster": "Recent Form & Momentum",
+      "top_correlate": "diff_win_rate_k5",
+      "max_pearson_r": 0.9662
     },
     {
-      "predictor": "diff_shots_k5",
-      "vif": 48.23,
-      "r_squared": 0.9793,
-      "collinearity_cluster": "Shot Volume & Dominance",
-      "top_correlate": "diff_shot_dominance_k5",
-      "max_pearson_r": 0.8888
-    },
-    {
-      "predictor": "diff_sot_k5",
-      "vif": 45.06,
-      "r_squared": 0.9778,
-      "collinearity_cluster": "Shot Quality & Precision",
-      "top_correlate": "diff_shots_k5",
-      "max_pearson_r": 0.7924
-    },
-    {
-      "predictor": "diff_shotsA_k5",
-      "vif": 26.24,
-      "r_squared": 0.9619,
-      "collinearity_cluster": "Shot Volume & Dominance",
-      "top_correlate": "diff_shot_dominance_k5",
-      "max_pearson_r": -0.8928
-    },
-    {
-      "predictor": "diff_sot_ratio_k5",
-      "vif": 16.75,
-      "r_squared": 0.9403,
-      "collinearity_cluster": "Shot Quality & Precision",
-      "top_correlate": "diff_sot_k5",
-      "max_pearson_r": 0.6429
-    },
-    {
-      "predictor": "diff_goal_diff_k5",
-      "vif": 8.4,
-      "r_squared": 0.881,
-      "collinearity_cluster": "Form & Goal Difference",
+      "predictor": "diff_win_rate_k5",
+      "vif": 17.23,
+      "r_squared": 0.9419,
+      "collinearity_cluster": "Win Conversion Rate",
       "top_correlate": "diff_ppg_k5",
-      "max_pearson_r": 0.8861
+      "max_pearson_r": 0.9662
     },
     {
       "predictor": "diff_goal_diff_k10",
-      "vif": 6.33,
-      "r_squared": 0.842,
-      "collinearity_cluster": "Form & Goal Difference",
-      "top_correlate": "diff_goal_diff_k5",
-      "max_pearson_r": 0.8429
+      "vif": 5.76,
+      "r_squared": 0.8263,
+      "collinearity_cluster": "Sustained Structural Quality",
+      "top_correlate": "diff_ppg_k5",
+      "max_pearson_r": 0.756
     },
     {
-      "predictor": "diff_ppg_k5",
-      "vif": 5.46,
-      "r_squared": 0.8168,
-      "collinearity_cluster": "Form & Goal Difference",
-      "top_correlate": "diff_goal_diff_k5",
-      "max_pearson_r": 0.8861
+      "predictor": "diff_goals_scored_k5",
+      "vif": 4.24,
+      "r_squared": 0.764,
+      "collinearity_cluster": "Attacking Threat & Output",
+      "top_correlate": "diff_ppg_k5",
+      "max_pearson_r": 0.7455
     },
     {
-      "predictor": "diff_sotA_k5",
-      "vif": 3.24,
-      "r_squared": 0.6918,
-      "collinearity_cluster": "Shot Quality & Precision",
-      "top_correlate": "diff_shotsA_k5",
-      "max_pearson_r": 0.7838
+      "predictor": "diff_goals_conceded_k5",
+      "vif": 3.53,
+      "r_squared": 0.7167,
+      "collinearity_cluster": "Defensive Concession",
+      "top_correlate": "diff_ppg_k5",
+      "max_pearson_r": -0.7013
     },
     {
       "predictor": "diff_venue_ppg_k5",
-      "vif": 2.36,
-      "r_squared": 0.5755,
-      "collinearity_cluster": "Form & Goal Difference",
+      "vif": 2.34,
+      "r_squared": 0.5735,
+      "collinearity_cluster": "Venue-Specific Home/Away Form",
       "top_correlate": "diff_goal_diff_k10",
       "max_pearson_r": 0.7196
     },
     {
-      "predictor": "diff_cornersA_k5",
-      "vif": 2.21,
-      "r_squared": 0.5481,
-      "collinearity_cluster": "Territorial Set Pieces",
-      "top_correlate": "diff_shot_dominance_k5",
-      "max_pearson_r": -0.7045
-    },
-    {
       "predictor": "diff_clean_sheets_k10",
-      "vif": 2.16,
-      "r_squared": 0.5363,
-      "collinearity_cluster": "Defensive Solidity",
+      "vif": 2.28,
+      "r_squared": 0.5619,
+      "collinearity_cluster": "Defensive Solidity & Shutouts",
       "top_correlate": "diff_goal_diff_k10",
       "max_pearson_r": 0.6879
     },
     {
-      "predictor": "diff_corners_k5",
-      "vif": 1.98,
-      "r_squared": 0.4938,
-      "collinearity_cluster": "Territorial Set Pieces",
-      "top_correlate": "diff_shots_k5",
-      "max_pearson_r": 0.6757
-    },
-    {
-      "predictor": "diff_yellows_k5",
-      "vif": 1.33,
-      "r_squared": 0.2476,
-      "collinearity_cluster": "Disciplinary & Aggression",
-      "top_correlate": "diff_fouls_k5",
-      "max_pearson_r": 0.4268
-    },
-    {
-      "predictor": "diff_fouls_k5",
-      "vif": 1.25,
-      "r_squared": 0.2024,
-      "collinearity_cluster": "Disciplinary & Aggression",
-      "top_correlate": "diff_yellows_k5",
-      "max_pearson_r": 0.4268
-    },
-    {
       "predictor": "diff_rest_days",
-      "vif": 1.03,
-      "r_squared": 0.0275,
-      "collinearity_cluster": "Schedule Congestion",
-      "top_correlate": "diff_corners_k5",
-      "max_pearson_r": -0.0957
+      "vif": 1.01,
+      "r_squared": 0.0084,
+      "collinearity_cluster": "Schedule Congestion & Rest",
+      "top_correlate": "diff_goal_diff_k10",
+      "max_pearson_r": -0.0727
     }
   ]
 }

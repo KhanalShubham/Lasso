@@ -50,22 +50,14 @@ plt.rcParams.update({
 })
 
 FEATURE_TITLES = {
-    "diff_sot_k5": "Shots on Target Diff (k=5)",
-    "diff_sotA_k5": "Conceded Shots on Target Diff (k=5)",
-    "diff_shots_k5": "Total Shots Diff (k=5)",
-    "diff_shotsA_k5": "Conceded Total Shots Diff (k=5)",
-    "diff_sot_ratio_k5": "Shot Accuracy Ratio Diff (k=5)",
-    "diff_shot_dominance_k5": "Shot Dominance Share Diff (k=5)",
-    "diff_corners_k5": "Corners Won Diff (k=5)",
-    "diff_cornersA_k5": "Conceded Corners Diff (k=5)",
-    "diff_fouls_k5": "Fouls Committed Diff (k=5)",
-    "diff_yellows_k5": "Yellow Cards Diff (k=5)",
-    "diff_goal_diff_k5": "Goal Difference Diff (k=5)",
-    "diff_goal_diff_k10": "Goal Difference Diff (k=10)",
-    "diff_clean_sheets_k10": "Clean Sheet Rate Diff (k=10)",
+    "diff_goals_scored_k5": "Goals Scored Diff (k=5)",
+    "diff_goals_conceded_k5": "Goals Conceded Diff (k=5)",
     "diff_ppg_k5": "Points Per Game Diff (k=5)",
+    "diff_goal_diff_k10": "Goal Difference Diff (k=10)",
     "diff_venue_ppg_k5": "Venue Form Diff (k=5)",
     "diff_rest_days": "Rest Days Diff",
+    "diff_clean_sheets_k10": "Clean Sheet Rate Diff (k=10)",
+    "diff_win_rate_k5": "Win Rate Diff (k=5)",
 }
 
 
@@ -177,11 +169,13 @@ def generate_figures():
     plt.tight_layout()
     save_fig(fig, "fig2_seasonal_sample_breakdown.png")
 
+    pred_cols = list(FEATURE_TITLES.keys())
+
     # =========================================================================
-    # Figure 3: Collinearity Heatmap (16x16 Matrix)
+    # Figure 3: Collinearity Heatmap (8x8 Matrix)
     # =========================================================================
     print("Generating Figure 3: Collinearity Heatmap...")
-    fig, ax = plt.subplots(figsize=(13, 11))
+    fig, ax = plt.subplots(figsize=(10, 8.5))
 
     corr = ready[pred_cols].corr()
     short_labels = [FEATURE_TITLES.get(c, c) for c in pred_cols]
@@ -204,10 +198,10 @@ def generate_figures():
         xticklabels=short_labels,
         yticklabels=short_labels,
         ax=ax,
-        annot_kws={"size": 8, "fontweight": "semibold"}
+        annot_kws={"size": 9, "fontweight": "semibold"}
     )
 
-    ax.set_title("Multicollinearity Matrix of 16 Pre-Match Differential Features (N = 1,741)", pad=15)
+    ax.set_title("Multicollinearity Matrix of 8 Pre-Match Differential Features (N = 1,741)", pad=15)
     plt.xticks(rotation=45, ha="right", fontsize=9)
     plt.yticks(rotation=0, fontsize=9)
 
@@ -215,10 +209,10 @@ def generate_figures():
     save_fig(fig, "fig3_collinearity_heatmap.png")
 
     # =========================================================================
-    # Figure 4: Feature Distributions Grid (4x4)
+    # Figure 4: Feature Distributions Grid (2x4)
     # =========================================================================
-    print("Generating Figure 4: 16 Feature Distributions Grid...")
-    fig, axes = plt.subplots(4, 4, figsize=(16, 12))
+    print("Generating Figure 4: 8 Feature Distributions Grid...")
+    fig, axes = plt.subplots(2, 4, figsize=(16, 7.5))
     axes = axes.flatten()
 
     for i, col in enumerate(pred_cols):
@@ -243,7 +237,7 @@ def generate_figures():
         ax.text(0.04, 0.85, f"μ={mu:.2f}\nσ={sigma:.2f}", transform=ax.transAxes, 
                 fontsize=8, bbox=dict(boxstyle="round,pad=0.2", facecolor="white", edgecolor="#cbd5e1", alpha=0.9))
 
-    plt.suptitle("Empirical Distributions of 16 Pre-Match Differentials (Modelling Sample, N = 1,741)", fontsize=14, y=0.995)
+    plt.suptitle("Empirical Distributions of 8 Pre-Match Differentials (Modelling Sample, N = 1,741)", fontsize=14, y=0.995)
     plt.tight_layout()
     save_fig(fig, "fig4_feature_distributions.png")
 
@@ -254,10 +248,10 @@ def generate_figures():
     fig, axes = plt.subplots(2, 2, figsize=(12, 10))
 
     pairs = [
-        ("diff_shots_k5", "diff_shot_dominance_k5", "Total Shots vs. Shot Dominance (r = 0.88)"),
-        ("diff_shotsA_k5", "diff_shot_dominance_k5", "Conceded Shots vs. Shot Dominance (r = -0.89)"),
-        ("diff_goal_diff_k5", "diff_ppg_k5", "Goal Difference vs. Points Per Game (r = 0.89)"),
-        ("diff_goal_diff_k5", "diff_goal_diff_k10", "Goal Diff (k=5) vs. Goal Diff (k=10) (r = 0.84)"),
+        ("diff_ppg_k5", "diff_win_rate_k5", "Points Per Game vs. Win Rate (r = 0.97)"),
+        ("diff_ppg_k5", "diff_goal_diff_k10", "Points Per Game vs. Goal Diff (k=10) (r = 0.76)"),
+        ("diff_goals_scored_k5", "diff_ppg_k5", "Goals Scored vs. Points Per Game (r = 0.75)"),
+        ("diff_goals_conceded_k5", "diff_ppg_k5", "Goals Conceded vs. Points Per Game (r = -0.70)"),
     ]
 
     for ax, (x_col, y_col, title) in zip(axes.flatten(), pairs):

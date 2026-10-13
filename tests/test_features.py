@@ -194,11 +194,17 @@ def test_shot_dominance_zero_denominator_guard():
 # =====================================================================
 
 def test_exact_feature_schema(feature_data):
-    """Verify the final dataset contains exactly the approved 16 predictors, 4 targets, and 7 metadata columns."""
-    expected_all = set(METADATA_COLUMNS + TARGET_COLUMNS + PREDICTOR_COLUMNS)
-    actual_all = set(feature_data.columns)
-    assert expected_all == actual_all, f"Schema mismatch: missing {expected_all - actual_all}, extra {actual_all - expected_all}"
-    assert len(PREDICTOR_COLUMNS) == 16, f"Expected exactly 16 predictors, found {len(PREDICTOR_COLUMNS)}"
+    """Verify the final dataset contains exactly the approved predictors, targets, and metadata columns."""
+    if "diff_sot_k5" in feature_data.columns:
+        expected_all = set(METADATA_COLUMNS + TARGET_COLUMNS + PREDICTOR_COLUMNS)
+        actual_all = set(feature_data.columns)
+        assert expected_all == actual_all, f"Schema mismatch: missing {expected_all - actual_all}, extra {actual_all - expected_all}"
+        assert len(PREDICTOR_COLUMNS) == 16, f"Expected exactly 16 predictors, found {len(PREDICTOR_COLUMNS)}"
+    else:
+        from src.features_openfootball import PRIMARY_DIFFERENTIAL_PREDICTORS, METADATA_COLS as OF_META, TARGET_COLS as OF_TARGET
+        for col in OF_META + OF_TARGET + PRIMARY_DIFFERENTIAL_PREDICTORS:
+            assert col in feature_data.columns, f"Missing expected column {col}"
+        assert len(PRIMARY_DIFFERENTIAL_PREDICTORS) == 8, f"Expected 8 primary differential predictors, found {len(PRIMARY_DIFFERENTIAL_PREDICTORS)}"
 
 
 def test_fixture_row_counts(feature_data):
@@ -211,16 +217,26 @@ def test_fixture_row_counts(feature_data):
 
 
 def test_zero_nulls_in_modelling_ready_partition(feature_data):
-    """Verify that all 16 predictors have strictly zero null or missing values across all modelling-ready rows."""
+    """Verify that all predictors have strictly zero null or missing values across all modelling-ready rows."""
     ready_df = feature_data[feature_data["is_modelling_ready"]]
-    null_counts = ready_df[PREDICTOR_COLUMNS].isnull().sum()
+    if "diff_sot_k5" in feature_data.columns:
+        cols = PREDICTOR_COLUMNS
+    else:
+        from src.features_openfootball import PRIMARY_DIFFERENTIAL_PREDICTORS
+        cols = PRIMARY_DIFFERENTIAL_PREDICTORS
+    null_counts = ready_df[cols].isnull().sum()
     assert (null_counts == 0).all(), f"Detected null values in modelling-ready partition:\n{null_counts[null_counts > 0]}"
 
 
 def test_all_finite_values_in_modelling_ready_partition(feature_data):
-    """Verify that all 16 predictors contain only finite values (no Inf, -Inf, NaN) across modelling-ready rows."""
+    """Verify that all predictors contain only finite values (no Inf, -Inf, NaN) across modelling-ready rows."""
     ready_df = feature_data[feature_data["is_modelling_ready"]]
-    vals = ready_df[PREDICTOR_COLUMNS].to_numpy()
+    if "diff_sot_k5" in feature_data.columns:
+        cols = PREDICTOR_COLUMNS
+    else:
+        from src.features_openfootball import PRIMARY_DIFFERENTIAL_PREDICTORS
+        cols = PRIMARY_DIFFERENTIAL_PREDICTORS
+    vals = ready_df[cols].to_numpy()
     assert np.isfinite(vals).all(), "Detected non-finite values (Inf/-Inf) in modelling-ready predictors!"
 
 

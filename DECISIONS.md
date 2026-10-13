@@ -22,6 +22,7 @@
 | **ADR-010** | Benchmark Baseline Specifications (Odds & Frequencies) | 2026-10-13 | **ACCEPTED** | Research Consensus |
 | **ADR-011** | Gameweek Block-Bootstrap Resampling Protocol | 2026-10-13 | **ACCEPTED** | Methodology Design |
 | **ADR-012** | Refined Hypothesis 3 (Parsimony & Predictive Parity) | 2026-10-13 | **ACCEPTED** | Research Consensus |
+| **ADR-013** | Migration to OpenFootball Public-Domain Data Pipeline | 2026-10-13 | **ACCEPTED** | Project Direction / Migration |
 
 ---
 
@@ -158,3 +159,34 @@
 - **Decision:** Refine $H_{3,\text{alt}}$ to explicitly pair parsimony with predictive parity:
   $$\text{Lasso isolates a substantially sparser tactical subset } (\le 50\%\text{ of features retained}) \text{ without statistically significant degradation in out-of-sample Log-Loss compared to Ridge}$$
 - **Rationale:** Aligns hypothesis testing with established statistical learning principles (Occam's razor / 1-SE rule), evaluating both dimensional sparsity and predictive non-inferiority via the Wilcoxon signed-rank test.
+
+---
+
+### ADR-013: Migration to OpenFootball Public-Domain Data Pipeline
+- **Status:** **ACCEPTED**
+- **Context:** The original research pipeline utilized match logs from FBref (Opta-derived, subject to web scrapers and restrictive commercial terms of use) and Football-Data.co.uk (proprietary commercial compilation). To guarantee unconditional reproducibility, open science transparency, legal compliance, and suitability for open-access academic publication without licensing ambiguity, the project requires a fully public-domain data foundation.
+- **Decision:** Migrate all data acquisition and preparation exclusively to the **OpenFootball England** repository:
+  - **Source URL:** `https://github.com/openfootball/england`
+  - **License Declaration:** CC0-1.0 Universal Public Domain Dedication (`LICENSE.md` checked 2026-10-13; SHA-256: `36ffd9dc085d529a7e60e1276d73ae5a030b020313e6c5408593a6ae2af39673`).
+  - **Target Seasons:** All 5 contiguous EPL seasons: `2019-20`, `2020-21`, `2021-22`, `2022-23`, `2023-24` (exactly 380 fixtures per season $\times$ 5 = 1,900 total matches).
+  - **Data Acquired:** Official match date, kickoff time, round/matchday, home club, away club, final scoreline, and 3-class outcome target (`HOME_WIN`, `DRAW`, `AWAY_WIN`).
+- **Data Limitations & Predictor Revision:**
+  - OpenFootball provides match schedules, dates, and final scorelines, but does **not** provide in-game event statistics (shots, shots on target, corners, fouls, cards, possession) or bookmaker odds.
+  - The comparative research question (MLE vs. Ridge vs. Lasso multinomial logistic regression) and 3-class target remain identical.
+  - Candidate predictors are revised to result-derived historical performance metrics:
+    - 5-match rolling goals scored (`home_goals_scored_k5`, `away_goals_scored_k5`, differential: `diff_goals_scored_k5`)
+    - 5-match rolling goals conceded (`home_goals_conceded_k5`, `away_goals_conceded_k5`, differential: `diff_goals_conceded_k5`)
+    - 5-match rolling points per game (`home_ppg_k5`, `away_ppg_k5`, differential: `diff_ppg_k5`)
+    - 10-match sustained goal difference per game (`home_gd_k10`, `away_gd_k10`, differential: `diff_goal_diff_k10`)
+    - 5-match venue-specific form (`home_venue_ppg_k5` for home games, `away_venue_ppg_k5` for away games, differential: `diff_venue_ppg_k5`)
+    - Inter-match rest days differential (`diff_rest_days`)
+    - Short-term 5-match goal difference differential (`diff_goal_diff_k5`), 10-match clean sheet rate differential (`diff_clean_sheets_k10`), and 5-match win rate differential (`diff_win_rate_k5`).
+- **Legacy Source Policy:**
+  - Files in `data/raw/fbref/` and `data/raw/football_data/` are marked as **LEGACY** and completely excluded from the active modeling pipeline.
+  - No fallback scraping or silent mixing of FBref/Football-Data is permitted. Raw legacy files are preserved solely for auditability.
+- **Verification & Invariant Guard:**
+  - Raw OpenFootball source files are stored immutably in `data/raw/openfootball/`.
+  - Canonical match table stored at `data/processed/epl_matches.csv`.
+  - Feature matrix stored at `data/features/dataset_features.csv`.
+  - Quality Gate 3 is held in BLOCKED state until feature engineering tests and reports pass. No models are trained in this migration phase.
+
