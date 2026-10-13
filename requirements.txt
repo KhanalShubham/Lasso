@@ -1,0 +1,27 @@
+# Core Dependencies for EPL Match Outcome Prediction Study
+# Python >= 3.10
+
+# Data Acquisition & Web Scraping
+soccerdata==1.9.1
+requests==2.34.2
+beautifulsoup4==4.15.0
+lxml==6.1.1
+seleniumbase==4.55.0
+selenium==4.50.0
+
+# Data Manipulation & Numerical Computation
+pandas==3.0.2
+numpy==2.4.4
+scipy==1.18.0
+
+# Statistical Modeling & Machine Learning (For subsequent modeling phases)
+scikit-learn==1.9.0
+statsmodels==0.15.0
+
+# Visualization & Reporting
+matplotlib==3.11.1
+seaborn==0.13.2
+
+# Testing & Verification
+pytest==9.1.1
+

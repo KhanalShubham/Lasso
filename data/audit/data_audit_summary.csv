@@ -1,0 +1,12 @@
+source,season,category,file_name,file_path,exists,size_kb,row_count,col_count,expected_rows,count_status
+Football-Data.co.uk,2019-2020,Results & Match Stats,premier_league_2019-2020.csv,data\raw\football_data\premier_league_2019-2020.csv,True,171.36,380,106,380,PASS
+Football-Data.co.uk,2020-2021,Results & Match Stats,premier_league_2020-2021.csv,data\raw\football_data\premier_league_2020-2021.csv,True,171.69,380,106,380,PASS
+Football-Data.co.uk,2021-2022,Results & Match Stats,premier_league_2021-2022.csv,data\raw\football_data\premier_league_2021-2022.csv,True,171.25,380,106,380,PASS
+Football-Data.co.uk,2022-2023,Results & Match Stats,premier_league_2022-2023.csv,data\raw\football_data\premier_league_2022-2023.csv,True,172.05,380,106,380,PASS
+Football-Data.co.uk,2023-2024,Results & Match Stats,premier_league_2023-2024.csv,data\raw\football_data\premier_league_2023-2024.csv,True,168.16,380,106,380,PASS
+FBref (soccerdata),2019-2020,Fixture Schedule & Results,schedule.csv,data\raw\fbref\2019-2020\schedule.csv,True,90.31,380,16,380,PASS
+FBref (soccerdata),2020-2021,Fixture Schedule & Results,schedule.csv,data\raw\fbref\2020-2021\schedule.csv,True,88.92,380,16,380,PASS
+FBref (soccerdata),2021-2022,Fixture Schedule & Results,schedule.csv,data\raw\fbref\2021-2022\schedule.csv,True,90.3,380,16,380,PASS
+FBref (soccerdata),2022-2023,Fixture Schedule & Results,schedule.csv,data\raw\fbref\2022-2023\schedule.csv,True,90.61,380,16,380,PASS
+FBref (soccerdata),2023-2024,Fixture Schedule & Results,schedule.csv,data\raw\fbref\2023-2024\schedule.csv,True,90.23,380,16,380,PASS
+FBref (soccerdata),2019-2024 (Combined),Full Fixture Schedule,fbref_premier_league_2019_2024_schedule.csv,data\raw\fbref\fbref_premier_league_2019_2024_schedule.csv,True,449.91,1900,16,1900,PASS

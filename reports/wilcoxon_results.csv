@@ -1,0 +1,4 @@
+comparison,alternative,test_stat_W,p_value,bonferroni_threshold,reject_H0,mean_weekly_diff_nats,median_weekly_diff_nats
+MLE vs. Ridge (L2),L_MLE > L_Ridge,489.0,0.04356415774964262,0.025,False,0.02099,0.01312
+MLE vs. Lasso (L1),L_MLE > L_Lasso,495.0,0.03593166972132167,0.025,False,0.02754,0.01388
+Ridge vs. Lasso (H3 Parity),two-sided,293.0,0.2674894785377546,0.05,False,0.00655,-0.00096

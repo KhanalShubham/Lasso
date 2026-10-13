@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EPL Match Outcome Prediction - Research & Data Explorer</title>
+  <link rel="stylesheet" href="styles.css">
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+  <div class="dashboard-container">
+    <!-- Header -->
+    <header class="paper-header">
+      <div class="header-title-block">
+        <h1>Comparative Analysis: MLE vs. Ridge vs. Lasso Logistic Regression</h1>
+        <p>English Premier League Match Outcome Prediction (2019/20 – 2023/24) • Academic Research Data Portal</p>
+      </div>
+      <div class="header-badges">
+        <span class="paper-badge badge-passed">✓ Gate 3 Verified (Zero Leakage)</span>
+        <span class="paper-badge">N = 1,900 Matches</span>
+        <span class="paper-badge">p = 16 Differentials</span>
+      </div>
+    </header>
+
+    <!-- Navigation Tabs -->
+    <nav class="paper-nav">
+      <button class="paper-tab-btn active" data-view="view-overview" id="tab-overview">Overview & Target Data</button>
+      <button class="paper-tab-btn" data-view="view-figures" id="tab-figures">📑 Research Figures (Publication-Ready)</button>
+      <button class="paper-tab-btn" data-view="view-features" id="tab-features">16 Feature Distributions</button>
+      <button class="paper-tab-btn" data-view="view-collinearity" id="tab-collinearity">Collinearity Heatmap</button>
+      <button class="paper-tab-btn" data-view="view-warmup" id="tab-warmup">Sample & Warm-Up Audit</button>
+      <button class="paper-tab-btn" data-view="view-inspector" id="tab-inspector">Matchup Form Inspector</button>
+      <button class="paper-tab-btn" data-view="view-models" id="tab-models">Model Comparison (MLE vs Ridge vs Lasso)</button>
+    </nav>
+
+    <!-- ================= VIEW 1: OVERVIEW & TARGET DATA ================= -->
+    <main>
+      <section id="view-overview" class="view-panel active-panel">
+        <div class="grid-kpis">
+          <div class="kpi-card">
+            <div class="kpi-label">Total Matches Analyzed</div>
+            <div class="kpi-num" id="kpi-total-matches">1,900</div>
+            <div class="kpi-sub">5 seasons × 380 matches</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Modelling-Ready Sample</div>
+            <div class="kpi-num" style="color:#15803d;" id="kpi-ready-matches">1,741</div>
+            <div class="kpi-sub">91.6% (Full history k ≥ 10)</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Warm-Up Excluded</div>
+            <div class="kpi-num" style="color:#b91c1c;" id="kpi-warmup-matches">159</div>
+            <div class="kpi-sub">8.4% (Zero synthetic imputation)</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Candidate Predictors</div>
+            <div class="kpi-num" id="kpi-features-count">16</div>
+            <div class="kpi-sub">Home - Away differentials</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Home Win Baseline</div>
+            <div class="kpi-num" style="color:#15803d;" id="kpi-home-win-pct">44.5%</div>
+            <div class="kpi-sub">Natural territorial home edge</div>
+          </div>
+        </div>
+
+        <div class="grid-2col">
+          <!-- Target Outcomes Pie Chart -->
+          <div class="paper-card">
+            <div class="paper-card-header">
+              <div>
+                <h2>Target Outcome Proportions (K = 3)</h2>
+                <p>Ground truth match outcome distribution on modelling-ready sample (N = 1,741)</p>
+              </div>
+            </div>
+            <div class="chart-container-std">
+              <canvas id="chart-target-dist"></canvas>
+            </div>
+            <div style="display:flex; justify-content:space-around; margin-top:14px; font-size:12px; font-weight:700;">
+              <span class="tag-pos">▲ Home Win: 774 (44.5%)</span>
+              <span class="tag-zero">■ Draw: 389 (22.3%)</span>
+              <span class="tag-neg">▼ Away Win: 578 (33.2%)</span>
+            </div>
+          </div>
+
+          <!-- Seasonal Stacked Bar Chart -->
+          <div class="paper-card">
+            <div class="paper-card-header">
+              <div>
+                <h2>Sample Breakdown Across Seasons</h2>
+                <p>Comparison of modelling-ready fixtures vs. warm-up cold-start periods</p>
+              </div>
+            </div>
+            <div class="chart-container-std">
+              <canvas id="chart-season-breakdown"></canvas>
+            </div>
+            <p style="font-size:12px; color:var(--text-muted); margin-top:14px; text-align:center;">
+              2019/20 has 100 warm-up fixtures during initial Gameweeks 1–10. Promoted teams account for subsequent warm-up matches.
+            </p>
+          </div>
+        </div>
+
+        <!-- Research Questions Summary Table -->
+        <div class="paper-card">
+          <div class="paper-card-header">
+            <div>
+              <h2>Core Research Hypotheses Under Evaluation</h2>
+              <p>Theoretical rationale for comparing classical unregularized MLE against regularized Ridge and Lasso</p>
+            </div>
+          </div>
+          <div class="paper-table-wrapper">
+            <table class="paper-table">
+              <thead>
+                <tr>
+                  <th style="width:15%;">Hypothesis</th>
+                  <th style="width:35%;">Research Question</th>
+                  <th style="width:25%;">Expected Regularized Advantage</th>
+                  <th style="width:25%;">Statistical Verification Metric</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>H1: Out-of-Sample Loss</strong></td>
+                  <td>Do Ridge and Lasso achieve significantly lower out-of-sample log-loss than classical MLE?</td>
+                  <td>Variance reduction through shrinkage prevents overconfidence on collinear noise.</td>
+                  <td>Paired Wilcoxon signed-rank test on Gameweek log-loss (p &lt; 0.05).</td>
+                </tr>
+                <tr>
+                  <td><strong>H2: Multicollinearity</strong></td>
+                  <td>How do Ridge and Lasso stabilize coefficient estimates when predictors correlate (|r| &gt; 0.70)?</td>
+                  <td>Ridge stabilizes the ill-conditioned Hessian; Lasso eliminates redundant predictors.</td>
+                  <td>Bootstrap coefficient standard errors and Sign Stability Index (SSI).</td>
+                </tr>
+                <tr>
+                  <td><strong>H3: Tactical Parsimony</strong></td>
+                  <td>Can Lasso isolate a compact tactical subset without compromising predictive accuracy?</td>
+                  <td>Exact L1 sparsity shrinks non-essential variables to exactly zero.</td>
+                  <td>Feature Selection Frequency (FSF) and McNemar classification test.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= VIEW 2: RESEARCH FIGURES FOR THESIS ================= -->
+      <section id="view-figures" class="view-panel">
+        <div class="paper-card">
+          <div class="paper-card-header">
+            <div>
+              <h2>Publication-Ready Research Figures (300 DPI)</h2>
+              <p>Generated in accordance with standard academic journal guidelines (Nature / Oxford style). Use these in your dissertation thesis or presentation slides.</p>
+            </div>
+            <span class="paper-badge badge-passed">High-Resolution PNGs Saved to reports/figures/</span>
+          </div>
+
+          <div class="fig-gallery-grid">
+            <!-- Figure 1 -->
+            <div class="fig-card">
+              <div class="fig-title">Figure 1. Target Class Proportions and Sample Counts</div>
+              <div class="fig-caption">
+                <strong>(A)</strong> Pie chart showing the empirical 3-class outcome balance (Home Win 44.5%, Away Win 33.2%, Draw 22.3%) on the modelling-ready sample (N = 1,741). 
+                <strong>(B)</strong> Absolute fixture counts comparison between the full dataset (N = 1,900) and the modelling-ready dataset, confirming representative distribution after warm-up exclusion.
+              </div>
+              <div class="fig-img-frame">
+                <img src="figures/fig1_target_distribution.png" alt="Figure 1: Target Outcome Distribution">
+              </div>
+              <div class="fig-download-bar">
+                <a href="figures/fig1_target_distribution.png" target="_blank" class="btn-download">🔍 Open Full-Res Image</a>
+              </div>
+            </div>
+
+            <!-- Figure 2 -->
+            <div class="fig-card">
+              <div class="fig-title">Figure 2. Seasonal Sample Composition & Cold-Start Breakdown</div>
+              <div class="fig-caption">
+                Stacked bar chart depicting fixture sample composition across the five contiguous Premier League seasons (2019/20 to 2023/24). 
+                Solid bars represent modelling-ready fixtures (k ≥ 10 matches), while hatched bars represent warm-up fixtures where clubs accumulated sufficient top-flight history.
+              </div>
+              <div class="fig-img-frame">
+                <img src="figures/fig2_seasonal_sample_breakdown.png" alt="Figure 2: Seasonal Sample Breakdown">
+              </div>
+              <div class="fig-download-bar">
+                <a href="figures/fig2_seasonal_sample_breakdown.png" target="_blank" class="btn-download">🔍 Open Full-Res Image</a>
+              </div>
+            </div>
+
+            <!-- Figure 3 -->
+            <div class="fig-card">
+              <div class="fig-title">Figure 3. Empirical Multicollinearity Heatmap (16 × 16 Matrix)</div>
+              <div class="fig-caption">
+                Pairwise Pearson correlation matrix for the 16 pre-match differential predictors computed on the modelling-ready dataset (N = 1,741). 
+                Demonstrates severe collinear clusters (|r| &gt; 0.70) between shot attempt volume, shot dominance share, goal differences, and points per game, directly motivating the need for regularized regression.
+              </div>
+              <div class="fig-img-frame">
+                <img src="figures/fig3_collinearity_heatmap.png" alt="Figure 3: Collinearity Heatmap">
+              </div>
+              <div class="fig-download-bar">
+                <a href="figures/fig3_collinearity_heatmap.png" target="_blank" class="btn-download">🔍 Open Full-Res Image</a>
+              </div>
+            </div>
+
+            <!-- Figure 4 -->
+            <div class="fig-card">
+              <div class="fig-title">Figure 4. Empirical Frequency Distributions of the 16 Candidate Predictors</div>
+              <div class="fig-caption">
+                Multi-panel 4×4 grid displaying empirical density histograms alongside Gaussian parametric fits (solid black curves) and zero-reference lines (dashed red) for all 16 candidate pre-match differentials. 
+                Confirms symmetrical centering around zero with well-behaved dispersion parameters.
+              </div>
+              <div class="fig-img-frame">
+                <img src="figures/fig4_feature_distributions.png" alt="Figure 4: 16 Feature Distributions Grid">
+              </div>
+              <div class="fig-download-bar">
+                <a href="figures/fig4_feature_distributions.png" target="_blank" class="btn-download">🔍 Open Full-Res Image</a>
+              </div>
+            </div>
+
+            <!-- Figure 5 -->
+            <div class="fig-card">
+              <div class="fig-title">Figure 5. Bivariate Scatterplots of Key Collinear Covariate Clusters</div>
+              <div class="fig-caption">
+                Four bivariate scatterplots illustrating redundant tactical dimensions: Total Shots vs. Shot Dominance (r = 0.88), Conceded Shots vs. Shot Dominance (r = -0.89), 
+                Short-term Goal Diff vs. PPG (r = 0.89), and Short-term vs. Long-term Goal Diff (r = 0.84). Linear regression lines confirm high structural collinearity.
+              </div>
+              <div class="fig-img-frame">
+                <img src="figures/fig5_collinear_pairs_scatter.png" alt="Figure 5: Collinear Pairs Scatterplots">
+              </div>
+              <div class="fig-download-bar">
+                <a href="figures/fig5_collinear_pairs_scatter.png" target="_blank" class="btn-download">🔍 Open Full-Res Image</a>
+              </div>
+            </div>
+
+            <!-- Figure 6 -->
+            <div class="fig-card">
+              <div class="fig-title">Figure 6. Hyperparameter Tuning Profiles (Validation Season 2022/23)</div>
+              <div class="fig-caption">
+                Validation performance evaluated across a 20-point logarithmic grid $\lambda \in [10^{-4}, 10^4]$ ($N_{\text{val}} = 370$). 
+                <strong>(A)</strong> Out-of-sample Multi-class Log-Loss displaying the global minima for Ridge ($\lambda^* = 0.0886$, loss = 1.0016 nats) and Lasso ($\lambda^* = 0.0127$, loss = 1.0003 nats) outperforming unpenalized MLE (1.0146 nats). 
+                <strong>(B)</strong> Brier score shrinkage trajectory. 
+                <strong>(C)</strong> Monotonic reduction in effective degrees of freedom $\text{df}(\lambda)$ from 17.0 parameters down to the 3 unpenalized intercepts.
+              </div>
+              <div class="fig-img-frame">
+                <img src="figures/fig6_hyperparameter_tuning.png" alt="Figure 6: Hyperparameter Tuning Profiles">
+              </div>
+              <div class="fig-download-bar">
+                <a href="figures/fig6_hyperparameter_tuning.png" target="_blank" class="btn-download">🔍 Open Full-Res Image</a>
+              </div>
+            </div>
+
+            <!-- Figure 7 -->
+            <div class="fig-card">
+              <div class="fig-title">Figure 7. Lasso L1 Coefficient Shrinkage Paths and Variable Elimination</div>
+              <div class="fig-caption">
+                Regularization traces showing coefficient paths for all 16 candidate predictors as the Lasso penalty parameter $\lambda$ varies. 
+                The dashed vertical line marks the optimal hyperparameter $\lambda^* = 0.0127$, retaining exactly 9 non-zero features (56.2%) while driving 7 redundant collinear predictors identically to zero.
+              </div>
+              <div class="fig-img-frame">
+                <img src="figures/lasso_shrinkage_path.png" alt="Figure 7: Lasso Shrinkage Path">
+              </div>
+              <div class="fig-download-bar">
+                <a href="figures/lasso_shrinkage_path.png" target="_blank" class="btn-download">🔍 Open Full-Res Image</a>
+              </div>
+            </div>
+
+            <!-- Figure 8 -->
+            <div class="fig-card">
+              <div class="fig-title">Figure 8. Probability Calibration Reliability Diagrams (Season 2023/24 Held-Out Test Set)</div>
+              <div class="fig-caption">
+                Empirical probability calibration curves across 10 confidence bins for Away Win (Class 0), Draw (Class 1), and Home Win (Class 2) evaluated on the untouched Season 2023/24 test partition ($N_{\text{test}} = 369$). 
+                Demonstrates how Ridge ($L_2$, ECE = 0.0370) and Lasso ($L_1$, ECE = 0.0467) achieve superior probability calibration over unregularized MLE (ECE = 0.0568), particularly resolving severe draw probability distortions.
+              </div>
+              <div class="fig-img-frame">
+                <img src="figures/calibration_curves.png" alt="Figure 8: Probability Calibration Reliability Curves">
+              </div>
+              <div class="fig-download-bar">
+                <a href="figures/calibration_curves.png" target="_blank" class="btn-download">🔍 Open Full-Res Image</a>
+              </div>
+            </div>
+
+            <!-- Figure 9 -->
+            <div class="fig-card">
+              <div class="fig-title">Figure 9. Bootstrap Parameter Stability & Lasso Feature Selection Frequency (B = 1,000)</div>
+              <div class="fig-caption">
+                Statistical stability evaluated across $B = 1,000$ matchweek block-bootstrap resamples of the training partition. 
+                <strong>(A)</strong> Sign Stability Index (SSI) comparing unregularized MLE with Ridge, illustrating the elimination of sign oscillation in collinear variables. 
+                <strong>(B)</strong> Lasso Feature Selection Frequency (FSF) isolating the Core Tactical Feature Set ($\text{FSF} \ge 80\%$: 10-match Goal Difference [99.9%], Conceded Shots [97.0%], and Fouls [86.6%]).
+              </div>
+              <div class="fig-img-frame">
+                <img src="figures/bootstrap_stability.png" alt="Figure 9: Bootstrap Stability and Sparsity">
+              </div>
+              <div class="fig-download-bar">
+                <a href="figures/bootstrap_stability.png" target="_blank" class="btn-download">🔍 Open Full-Res Image</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= VIEW 3: 16 FEATURE DISTRIBUTIONS ================= -->
+      <section id="view-features" class="view-panel">
+        <div class="paper-card">
+          <div class="paper-card-header">
+            <div>
+              <h2>Interactive Feature Distribution Explorer</h2>
+              <p>Select any predictor below to inspect its frequency histogram, central moments, and dispersion.</p>
+            </div>
+            <div>
+              <label for="select-feature-dist" style="font-size:12px; font-weight:600; margin-right:6px;">Select Predictor:</label>
+              <select id="select-feature-dist" class="paper-select"></select>
+            </div>
+          </div>
+
+          <div class="grid-2col">
+            <div class="chart-container-tall">
+              <canvas id="chart-feature-histogram"></canvas>
+            </div>
+
+            <div>
+              <div style="background:var(--bg-subtle); border:1px solid var(--border-medium); border-radius:var(--radius-sm); padding:16px; margin-bottom:16px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                  <h3 id="dist-title" style="font-size:16px; font-weight:800;">Shots on Target Differential</h3>
+                  <span id="dist-category" class="paper-badge" style="background:#ffffff;">Attack Volume</span>
+                </div>
+                <div style="font-size:12px; font-family:var(--font-mono); color:var(--text-muted); margin-bottom:10px;" id="dist-key">diff_sot_k5</div>
+                <p id="dist-desc" style="font-size:13px; color:var(--text-secondary); margin-bottom:10px;">Rolling 5-match differential in shots on target taken.</p>
+                <div style="font-size:12px; color:var(--text-muted);">
+                  <strong>Unit:</strong> <span id="dist-unit">Shots on target / match</span> • 
+                  <strong>Cluster:</strong> <span id="dist-cluster">Offensive Threat & Volume</span>
+                </div>
+              </div>
+
+              <div class="paper-table-wrapper">
+                <table class="paper-table">
+                  <thead>
+                    <tr>
+                      <th>Statistical Parameter</th>
+                      <th>Measured Value</th>
+                      <th>Interpretation</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>Sample Size (N)</td>
+                      <td class="font-mono" id="stat-count" style="font-weight:700;">1,741</td>
+                      <td>100% complete, 0 missing entries</td>
+                    </tr>
+                    <tr>
+                      <td>Mean (μ)</td>
+                      <td class="font-mono" id="stat-mean" style="font-weight:700;">-0.0829</td>
+                      <td>Centered near zero (symmetrical differential)</td>
+                    </tr>
+                    <tr>
+                      <td>Standard Deviation (σ)</td>
+                      <td class="font-mono" id="stat-std" style="font-weight:700;">1.9696</td>
+                      <td>Measure of inter-team tactical spread</td>
+                    </tr>
+                    <tr>
+                      <td>Median (Q2)</td>
+                      <td class="font-mono" id="stat-median" style="font-weight:700;">0.0000</td>
+                      <td>50% of matches home team has advantage</td>
+                    </tr>
+                    <tr>
+                      <td>Range [Min, Max]</td>
+                      <td class="font-mono" id="stat-range" style="font-weight:700;">[-7.80, +6.20]</td>
+                      <td>Extremes between dominant vs. struggling clubs</td>
+                    </tr>
+                    <tr>
+                      <td>Interquartile Range [Q1, Q3]</td>
+                      <td class="font-mono" id="stat-iqr" style="font-weight:700;">[-1.40, +1.20]</td>
+                      <td>Central 50% spread of all fixtures</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= VIEW 4: COLLINEARITY HEATMAP ================= -->
+      <section id="view-collinearity" class="view-panel">
+        <div class="paper-card">
+          <div class="paper-card-header">
+            <div>
+              <h2>Interactive Pearson Correlation Heatmap (16 × 16)</h2>
+              <p>Hover over any cell to see exact correlation r between tactical dimensions.</p>
+            </div>
+            <div style="font-size:12px; font-weight:600; display:flex; gap:16px;">
+              <span class="tag-pos">▲ Positive Correlation (r &gt; 0)</span>
+              <span class="tag-neg">▼ Negative Correlation (r &lt; 0)</span>
+            </div>
+          </div>
+
+          <div class="heatmap-scroll-area">
+            <div class="heatmap-academic-grid" id="heatmap-grid-target"></div>
+          </div>
+        </div>
+
+        <div class="paper-card">
+          <div class="paper-card-header">
+            <div>
+              <h3>Severe Collinear Pairs (|r| ≥ 0.65)</h3>
+              <p>These pairs create severe variance inflation in unregularized MLE, demonstrating why Ridge and Lasso are required.</p>
+            </div>
+            <span class="paper-badge" style="background:var(--indicator-red-bg); color:var(--indicator-red); border-color:var(--indicator-red);">High VIF Predictors</span>
+          </div>
+          <div class="paper-table-wrapper">
+            <table class="paper-table">
+              <thead>
+                <tr>
+                  <th>Predictor A</th>
+                  <th>Predictor B</th>
+                  <th>Correlation Coefficient (r)</th>
+                  <th>Collinearity Level</th>
+                  <th>Impact on Classical MLE</th>
+                </tr>
+              </thead>
+              <tbody id="table-top-collinear-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= VIEW 5: WARM-UP & MISSINGNESS ================= -->
+      <section id="view-warmup" class="view-panel">
+        <div class="paper-card">
+          <div class="paper-card-header">
+            <div>
+              <h2>Warm-Up Period & Missingness Integrity Audit</h2>
+              <p>Detailed breakdown of fixture status across all five Premier League seasons.</p>
+            </div>
+            <span class="paper-badge badge-passed">Zero Synthetic Imputation</span>
+          </div>
+
+          <div class="paper-table-wrapper">
+            <table class="paper-table">
+              <thead>
+                <tr>
+                  <th>Season</th>
+                  <th>Total Matches</th>
+                  <th>Modelling-Ready (k ≥ 10)</th>
+                  <th>Warm-Up Excluded</th>
+                  <th>Home Win %</th>
+                  <th>Draw %</th>
+                  <th>Away Win %</th>
+                  <th>Missing Predictor Values</th>
+                </tr>
+              </thead>
+              <tbody id="table-warmup-body"></tbody>
+            </table>
+          </div>
+
+          <div style="margin-top:16px; padding:14px; background:var(--bg-subtle); border:1px solid var(--border-medium); border-radius:var(--radius-sm); font-size:13px;">
+            <strong>Methodological Justification for Excluding 159 Fixtures:</strong>
+            Standard rolling averages require a warm-up window to avoid calculating statistics over incomplete sample sizes. 
+            In Season 2019/20, all clubs begin at Gameweek 1 with 0 prior matches, requiring 10 matchweeks (100 matches) to reach steady state. 
+            In subsequent seasons, returning relegated/promoted clubs undergo their own cold-start warm-up. 
+            Rather than filling early matches with biased full-season averages or synthetic zeros, excluding these 159 observations guarantees that all 1,741 modelling fixtures have <strong>strictly zero missing values and zero temporal lookahead leakage</strong>.
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= VIEW 6: MATCHUP FORM INSPECTOR ================= -->
+      <section id="view-inspector" class="view-panel">
+        <div class="paper-card">
+          <div class="paper-card-header">
+            <div>
+              <h2>Head-to-Head Matchup Form Inspector</h2>
+              <p>Select any historical Premier League match to inspect which team held the statistical edge heading into kickoff.</p>
+            </div>
+            <div>
+              <label for="select-inspector-match" style="font-size:12px; font-weight:600; margin-right:6px;">Select Fixture:</label>
+              <select id="select-inspector-match" class="paper-select" style="min-width:320px;"></select>
+            </div>
+          </div>
+
+          <!-- Fixture Outcome Banner -->
+          <div class="match-banner">
+            <div class="match-team-block">
+              <div class="match-team-title" id="insp-home-team">Manchester City</div>
+              <div class="match-team-role">Home Side</div>
+            </div>
+            <div class="match-score-block">
+              <div class="match-score-text" id="insp-score">2 - 1</div>
+              <div id="insp-outcome-pill" class="badge-outcome-hw">Home Win</div>
+              <div style="font-size:11px; color:var(--text-muted); margin-top:4px;" id="insp-meta">2023-2024 • Kickoff 20:00</div>
+            </div>
+            <div class="match-team-block">
+              <div class="match-team-title" id="insp-away-team">Liverpool</div>
+              <div class="match-team-role">Away Side</div>
+            </div>
+          </div>
+
+          <!-- Differential Values List -->
+          <div class="paper-card-header" style="margin-top:20px;">
+            <h3>Pre-Match Differential Vectors (ΔX = Home - Away)</h3>
+            <div style="font-size:12px; display:flex; gap:16px;">
+              <span class="tag-pos">▲ Positive (Green) = Home Statistical Edge</span>
+              <span class="tag-neg">▼ Negative (Red) = Away Statistical Edge</span>
+            </div>
+          </div>
+          <div class="diff-grid-simple" id="insp-diff-bars-container"></div>
+        </div>
+      </section>
+
+      <!-- ================= VIEW 7: MODEL COMPARISON ================= -->
+      <section id="view-models" class="view-panel">
+        <div class="grid-3col">
+          <!-- Card 1: MLE -->
+          <div class="paper-card">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+              <h3>1. Classical MLE</h3>
+              <span class="paper-badge" style="background:#fee2e2; color:#b91c1c; border-color:#b91c1c;">λ = 0</span>
+            </div>
+            <p style="font-size:13px; color:var(--text-secondary); margin-bottom:12px;">
+              Standard Maximum Likelihood Estimation without parameter penalties.
+            </p>
+            <div style="background:var(--bg-subtle); padding:10px; font-family:var(--font-mono); font-size:12px; border:1px solid var(--border-medium); border-radius:var(--radius-sm); margin-bottom:14px;">
+              min - ℓ(B) = - ∑ log p_ic
+            </div>
+            <ul style="font-size:13px; color:var(--text-secondary); padding-left:18px; line-height:1.7;">
+              <li>Solves score equations: <strong>Xᵀ(y - p) = 0</strong>.</li>
+              <li>Covariance estimated via exact Hessian inversion: <strong>H⁻¹ = (Xᵀ W X)⁻¹</strong>.</li>
+              <li><strong style="color:#b91c1c;">Collinearity Flaw:</strong> Correlated variables make det(H) ≈ 0, leading to explosive variance and sign instability.</li>
+            </ul>
+          </div>
+
+          <!-- Card 2: Ridge -->
+          <div class="paper-card">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+              <h3>2. Ridge Regression (L2)</h3>
+              <span class="paper-badge" style="background:#f0fdf4; color:#15803d; border-color:#15803d;">λ ∑ β_j²</span>
+            </div>
+            <p style="font-size:13px; color:var(--text-secondary); margin-bottom:12px;">
+              L2-regularized logistic regression with smooth quadratic penalty.
+            </p>
+            <div style="background:var(--bg-subtle); padding:10px; font-family:var(--font-mono); font-size:12px; border:1px solid var(--border-medium); border-radius:var(--radius-sm); margin-bottom:14px;">
+              min - ℓ(B) + λ ∑∑ β_jc²
+            </div>
+            <ul style="font-size:13px; color:var(--text-secondary); padding-left:18px; line-height:1.7;">
+              <li>Augments Hessian: <strong>(H + 2λI) &gt; 0</strong>.</li>
+              <li>Guarantees positive definiteness, completely resolving matrix singularity.</li>
+              <li><strong style="color:#15803d;">Shrinkage Dynamics:</strong> Proportional uniform shrinkage; retains all 16 variables in the model.</li>
+            </ul>
+          </div>
+
+          <!-- Card 3: Lasso -->
+          <div class="paper-card">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+              <h3>3. Lasso Regression (L1)</h3>
+              <span class="paper-badge" style="background:#f5f3ff; color:#6d28d9; border-color:#6d28d9;">λ ∑ |β_j|</span>
+            </div>
+            <p style="font-size:13px; color:var(--text-secondary); margin-bottom:12px;">
+              L1-regularized logistic regression with non-smooth absolute penalty.
+            </p>
+            <div style="background:var(--bg-subtle); padding:10px; font-family:var(--font-mono); font-size:12px; border:1px solid var(--border-medium); border-radius:var(--radius-sm); margin-bottom:14px;">
+              min - ℓ(B) + λ ∑∑ |β_jc|
+            </div>
+            <ul style="font-size:13px; color:var(--text-secondary); padding-left:18px; line-height:1.7;">
+              <li>Subgradient condition creates sharp non-differentiable corners at β = 0.</li>
+              <li>Optimized via coordinate descent / SAGA solver.</li>
+              <li><strong style="color:#6d28d9;">Feature Selection:</strong> Shrinks redundant collinear coefficients exactly to zero, isolating the core tactical subset.</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="paper-footer">
+      <div>
+        <strong>EPL Match Outcome Prediction Research Study</strong> • Maximum Likelihood vs. Ridge vs. Lasso Logistic Regression
+      </div>
+      <div>
+        Governed by <a href="../PROJECT_CONSTITUTION.md" style="color:var(--text-primary); font-weight:700;">PROJECT_CONSTITUTION.md</a> • Verified via Automated Quality Gates
+      </div>
+    </footer>
+  </div>
+
+  <script src="dashboard_data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
